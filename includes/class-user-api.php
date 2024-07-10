@@ -56,7 +56,7 @@ class User_API {
         $verification_url = add_query_arg(array(
             'token' => $verification_token,
             'user_id' => $user_id,
-        ), site_url('/wp-json/password-manager/v1/verify-email'));
+        ), site_url(PM_FRONTEND_URL.'/user/verify'));
 
         wp_mail(
             $email,

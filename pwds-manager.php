@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Password Manager
  * Description: Passwords Manager lets you store all your passwords in one place.
@@ -8,7 +9,7 @@
  */
 
 // Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
@@ -18,12 +19,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 define('PM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PM_PLUGIN_DIR', dirname(__FILE__));
 define('PM_INC', PM_PLUGIN_DIR . '/includes/');
+define('PM_FRONTEND_URL', 'http://localhost:8080/');
+
 
 /**
  * Create Database table for plugin activation
  */
-if ( ! function_exists( 'pm_db_install' ) ) {
-    function pm_db_install() {
+if (!function_exists('pm_db_install')) {
+    function pm_db_install()
+    {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         global $wpdb;
@@ -53,8 +57,9 @@ if ( ! function_exists( 'pm_db_install' ) ) {
 /**
  * Deactivation hook
  */
-if ( ! function_exists( 'pm_deactivate_plugin' ) ) {
-    function pm_deactivate_plugin() {
+if (!function_exists('pm_deactivate_plugin')) {
+    function pm_deactivate_plugin()
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . 'password_manager';
 
@@ -67,8 +72,9 @@ if ( ! function_exists( 'pm_deactivate_plugin' ) ) {
 /**
  * Uninstall hook
  */
-if ( ! function_exists( 'pm_uninstall_plugin' ) ) {
-    function pm_uninstall_plugin() {
+if (!function_exists('pm_uninstall_plugin')) {
+    function pm_uninstall_plugin()
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . 'password_manager';
 
@@ -84,11 +90,18 @@ if ( ! function_exists( 'pm_uninstall_plugin' ) ) {
     register_uninstall_hook(__FILE__, 'pm_uninstall_plugin');
 }
 
+
 // Initialize the plugin.
-if ( ! function_exists( 'pm_initialize_plugin' ) ) {
-    function pm_initialize_plugin() {
-        $password_manager = new Password_Manager();
-        $password_manager->run();
+if (!function_exists('pm_initialize_plugin')) {
+    function pm_initialize_plugin()
+    {
+        // require_once PM_INC . 'class-password-manager.php';
+        // require_once PM_INC . 'class-password-manager-api.php';
+        // require_once PM_INC . 'class-password-manager-encryption.php';
+        require_once PM_INC . 'class-user-api.php';
+
+        // $password_manager = new Password_Manager();
+        // $password_manager->run();
     }
-    add_action( 'plugins_loaded', 'pm_initialize_plugin' );
+    add_action('plugins_loaded', 'pm_initialize_plugin');
 }
