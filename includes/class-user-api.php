@@ -13,11 +13,17 @@ class User_API{
     }
 
     public function register_api_routes(){
-        register_rest_route('password-manager/v1', '/start-registration', array(
+        register_rest_route(ROUTE_URL, '/start-registration', array(
             'methods' => 'POST',
             'callback' => array($this, 'start_registration'),
         ));
-    } 
+
+        register_rest_route(ROUTE_URL, '/verify-email', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'verify_email'),
+        ));
+    }
+    
 
     public function start_registration($request) {
         $email = sanitize_email($request['email']);
@@ -45,6 +51,21 @@ class User_API{
         );
 
         return new WP_REST_Response(array('message' => 'Verification email sent. Please check your email.'), 200);
+    }
+
+    public function verify_email($request) {
+        $token = sanitize_text_field($request['token']);
+        $email = sanitize_email($request['email']);
+
+         $saved_token = get_transient('pm_verification_token_'.$email);
+
+        if ($saved_token !== $token) {
+             return new WP_REST_Response(array('message' => 'Invalid or expired verification token.'.$saved_token.'-'.$token), 400);
+        }
+
+         // Redirect to the frontend registration page with the email and token as query parameters
+         return new WP_REST_Response(array('message' => PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token)),200);
+         exit;
     }
 
 }

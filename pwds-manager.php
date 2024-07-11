@@ -20,6 +20,7 @@ define('PM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PM_PLUGIN_DIR', dirname(__FILE__));
 define('PM_INC', PM_PLUGIN_DIR . '/includes/');
 define('PM_FRONTEND_URL', 'http://localhost:8080/');
+define('ROUTE_URL', 'password-manager/v1');
 
 /**
  * Create Database table for plugin activation
