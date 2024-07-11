@@ -21,7 +21,6 @@ define('PM_PLUGIN_DIR', dirname(__FILE__));
 define('PM_INC', PM_PLUGIN_DIR . '/includes/');
 define('PM_FRONTEND_URL', 'http://localhost:8080/');
 
-
 /**
  * Create Database table for plugin activation
  */
@@ -48,6 +47,13 @@ if (!function_exists('pm_db_install')) {
         ) $charset_collate;";
 
         dbDelta($sql);
+
+        // Create the custom user role
+        add_role('password_owner', 'Password Owner', array(
+            'read' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
+        ));
     }
 
     // Activation hook.
@@ -65,6 +71,9 @@ if (!function_exists('pm_deactivate_plugin')) {
 
         $sql = "DROP TABLE IF EXISTS $table_name;";
         $wpdb->query($sql);
+
+        // Remove the custom user role
+        remove_role('password_owner');
     }
     register_deactivation_hook(__FILE__, 'pm_deactivate_plugin');
 }
@@ -86,22 +95,18 @@ if (!function_exists('pm_uninstall_plugin')) {
         foreach ($users as $user) {
             delete_user_meta($user->ID, 'pm_encryption_key');
         }
+
+        // Remove the custom user role
+        remove_role('password_owner');
     }
     register_uninstall_hook(__FILE__, 'pm_uninstall_plugin');
 }
-
 
 // Initialize the plugin.
 if (!function_exists('pm_initialize_plugin')) {
     function pm_initialize_plugin()
     {
-        // require_once PM_INC . 'class-password-manager.php';
-        // require_once PM_INC . 'class-password-manager-api.php';
-        // require_once PM_INC . 'class-password-manager-encryption.php';
         require_once PM_INC . 'class-user-api.php';
-
-        // $password_manager = new Password_Manager();
-        // $password_manager->run();
     }
     add_action('plugins_loaded', 'pm_initialize_plugin');
 }
