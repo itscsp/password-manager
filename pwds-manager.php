@@ -22,6 +22,7 @@ define('PM_INC', PM_PLUGIN_DIR . '/includes/');
 define('PM_FRONTEND_URL', 'http://localhost:8080/');
 define('ROUTE_URL', 'password-manager/v1');
 
+
 /**
  * Create Database table for plugin activation
  */
@@ -108,6 +109,9 @@ if (!function_exists('pm_initialize_plugin')) {
     function pm_initialize_plugin()
     {
         require_once PM_INC . 'class-user-api.php';
+        require_once PM_INC . 'class-password-api.php';
+        require_once PM_INC . 'helper-functions.php';
     }
+    
     add_action('plugins_loaded', 'pm_initialize_plugin');
 }
