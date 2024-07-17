@@ -10,7 +10,7 @@ class User_API
     public function __construct()
     {
         add_action('rest_api_init', array($this, 'register_api_routes'));
-        add_action('rest_api_init', array($this, 'add_cors_headers'));
+        add_action('rest_api_init', array($this, 'add_cors_headers')); //CORS Header
         add_action('rest_api_init', array($this, 'handle_preflight'), 15);
     }
 
