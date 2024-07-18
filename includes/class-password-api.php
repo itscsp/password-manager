@@ -32,12 +32,17 @@ class Password_API
     {
         $headers = getallheaders();
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
+        $secret_key = isset($headers['X-Secret-Key']) ? sanitize_text_field($headers['X-Secret-Key']) : '';
         $user_id = $this->get_user_id_from_token($session_token);
-        
+
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
         }
-        
+
+        if (empty($secret_key)) {
+            return new WP_REST_Response(array('message' => 'Secret key is required.'), 403);
+        }
+
         $username = sanitize_text_field($request['username']);
         $password = sanitize_text_field($request['password']);
         $url = sanitize_text_field($request['url']);
@@ -56,17 +61,10 @@ class Password_API
             return new WP_REST_Response(array('message' => 'Username and site URL already exist. Please update them.'), 409);
         }
 
-        // Get the encryption key from user meta
-        $encryption_key = get_user_meta($user_id, 'pm_encryption_key', true);
-        
-        if (!$encryption_key) {
-            return new WP_REST_Response(array('message' => 'Encryption key not found.'), 403);
-        }
-
         // Encrypt the password using AES-GCM
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-128-gcm'));
         $tag = null;
-        $encrypted_password = openssl_encrypt($password, 'aes-128-gcm', $encryption_key, OPENSSL_RAW_DATA, $iv, $tag);
+        $encrypted_password = openssl_encrypt($password, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
 
         // Store the encrypted password, IV, and tag together
         $encrypted_password = base64_encode($encrypted_password . '::' . $iv . '::' . $tag);
@@ -89,17 +87,15 @@ class Password_API
     {
         $headers = getallheaders();
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
+        $secret_key = isset($headers['X-Secret-Key']) ? sanitize_text_field($headers['X-Secret-Key']) : '';
         $user_id = $this->get_user_id_from_token($session_token);
-        
+
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
         }
 
-        // Get the encryption key from user meta
-        $encryption_key = get_user_meta($user_id, 'pm_encryption_key', true);
-        
-        if (!$encryption_key) {
-            return new WP_REST_Response(array('message' => 'Encryption key not found.'), 403);
+        if (empty($secret_key)) {
+            return new WP_REST_Response(array('message' => 'Secret key is required.'), 403);
         }
 
         global $wpdb;
@@ -109,7 +105,7 @@ class Password_API
 
         foreach ($results as &$result) {
             list($encrypted_data, $iv, $tag) = explode('::', base64_decode($result['password']), 3);
-            $result['password'] = openssl_decrypt($encrypted_data, 'aes-128-gcm', $encryption_key, OPENSSL_RAW_DATA, $iv, $tag);
+            $result['password'] = openssl_decrypt($encrypted_data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
         }
 
         return new WP_REST_Response($results, 200);
