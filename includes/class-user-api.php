@@ -6,8 +6,11 @@ if (!defined('ABSPATH')) {
 
 class User_API
 {
+    private $master_key;
+
     public function __construct()
     {
+        $this->master_key = 'Qf2P£oz@m?x27``cJ_,voJZF(wvi*4j3b2]e'; // Ensure you have set this in your server environment
         add_action('rest_api_init', array($this, 'register_api_routes'));
     }
 
@@ -83,8 +86,8 @@ class User_API
         // Redirect to the frontend registration page with the email and token as query parameters
         // wp_redirect(PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token));
         return new WP_REST_Response(array('message' => PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token)),200);
-        
         exit;
+
     }
 
     public function complete_registration($request)
@@ -123,6 +126,8 @@ class User_API
 
         // Generate and send the secret key via email
         $secret_key = wp_generate_password(32, true, true);
+        $encrypted_secret_key = $this->encrypt_key($secret_key);
+        update_user_meta($user_id, 'pm_secret_key', $encrypted_secret_key);
         wp_mail($email, 'Your Secret Key', "Here is your secret key: $secret_key");
 
         delete_transient('pm_verification_token_' . $email);
@@ -130,10 +135,24 @@ class User_API
         return new WP_REST_Response(array('message' => 'User registered successfully. Please check your email for the secret key.', 'user_id' => $user_id), 201);
     }
 
+    private function encrypt_key($key)
+    {
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-gcm'));
+        $tag = null;
+        $encrypted_key = openssl_encrypt($key, 'aes-256-gcm', $this->master_key, OPENSSL_RAW_DATA, $iv, $tag);
+        return base64_encode($encrypted_key . '::' . $iv . '::' . $tag);
+    }
+
+    private function decrypt_key($encrypted_key)
+    {
+        list($encrypted_data, $iv, $tag) = explode('::', base64_decode($encrypted_key), 3);
+        return openssl_decrypt($encrypted_data, 'aes-256-gcm', $this->master_key, OPENSSL_RAW_DATA, $iv, $tag);
+    }
+
     public function login_user($request)
     {
         $username = sanitize_text_field($request['username']);
-        $secret_key = sanitize_text_field($request['secret_key']);
+        $provided_secret_key = sanitize_text_field($request['secret_key']);
         $password = sanitize_text_field($request['password']);
 
         $user = get_user_by('login', $username);
@@ -148,11 +167,20 @@ class User_API
             return new WP_REST_Response(array('message' => 'Invalid password.'), 403);
         }
 
+        // Retrieve and decrypt the stored secret key
+        $encrypted_secret_key = get_user_meta($user->ID, 'pm_secret_key', true);
+        $stored_secret_key = $this->decrypt_key($encrypted_secret_key);
+
+        // Compare the provided secret key with the stored secret key
+        if ($provided_secret_key !== $stored_secret_key) {
+            return new WP_REST_Response(array('message' => 'Invalid secret key.'), 403);
+        }
+
         // Generate a session token
         $session_token = $this->generate_session_token($user->ID);
 
         // Return the session token
-        return new WP_REST_Response(array('message' => 'User logged in successfully.', 'token' => $session_token, 'secret_key' => $secret_key), 200);
+        return new WP_REST_Response(array('message' => 'User logged in successfully.', 'token' => $session_token), 200);
     }
 
     public function refresh_session($request)
