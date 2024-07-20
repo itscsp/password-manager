@@ -6,8 +6,11 @@ if (!defined('ABSPATH')) {
 
 class User_API
 {
+    private $master_key;
+
     public function __construct()
     {
+        $this->master_key = 'Qf2P£oz@m?x27``cJ_,voJZF(wvi*4j3b2]e'; // Ensure you have set this in your server environment
         add_action('rest_api_init', array($this, 'register_api_routes'));
     }
 
@@ -36,13 +39,13 @@ class User_API
         register_rest_route('password-manager/v1', '/refresh-session', array(
             'methods' => 'POST',
             'callback' => array($this, 'refresh_session'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'permission_callback' => array($this, 'validate_token')
         ));
 
         register_rest_route('password-manager/v1', '/logout', array(
             'methods' => 'POST',
-            'callback' => array('PM_Helper', 'logout_user'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'callback' => array($this, 'logout_user'),
+            'permission_callback' => array($this, 'validate_token')
         ));
     }
 
@@ -88,7 +91,8 @@ class User_API
 
         // Redirect to the frontend registration page with the email and token as query parameters
         // wp_redirect(PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token));
-        return new WP_REST_Response(array('message' => PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token)), 200);
+        return new WP_REST_Response(array('message' => PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token)),200);
+        exit;
     }
 
     public function complete_registration($request)
@@ -127,13 +131,27 @@ class User_API
 
         // Generate and send the secret key via email
         $secret_key = wp_generate_password(32, true, true);
-        $encrypted_secret_key = PM_Helper::encrypt_key($secret_key);
+        $encrypted_secret_key = $this->encrypt_key($secret_key);
         update_user_meta($user_id, 'pm_secret_key', $encrypted_secret_key);
         wp_mail($email, 'Your Secret Key', "Here is your secret key: $secret_key");
 
         delete_transient('pm_verification_token_' . $email);
 
         return new WP_REST_Response(array('message' => 'User registered successfully. Please check your email for the secret key.', 'user_id' => $user_id), 201);
+    }
+
+    private function encrypt_key($key)
+    {
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-gcm'));
+        $tag = null;
+        $encrypted_key = openssl_encrypt($key, 'aes-256-gcm', $this->master_key, OPENSSL_RAW_DATA, $iv, $tag);
+        return base64_encode($encrypted_key . '::' . $iv . '::' . $tag);
+    }
+
+    private function decrypt_key($encrypted_key)
+    {
+        list($encrypted_data, $iv, $tag) = explode('::', base64_decode($encrypted_key), 3);
+        return openssl_decrypt($encrypted_data, 'aes-256-gcm', $this->master_key, OPENSSL_RAW_DATA, $iv, $tag);
     }
 
     public function login_user($request)
@@ -156,7 +174,7 @@ class User_API
 
         // Retrieve and decrypt the stored secret key
         $encrypted_secret_key = get_user_meta($user->ID, 'pm_secret_key', true);
-        $stored_secret_key = PM_Helper::decrypt_key($encrypted_secret_key);
+        $stored_secret_key = $this->decrypt_key($encrypted_secret_key);
 
         // Compare the provided secret key with the stored secret key
         if ($provided_secret_key !== $stored_secret_key) {
@@ -164,7 +182,7 @@ class User_API
         }
 
         // Generate a session token
-        $session_token = PM_Helper::generate_session_token($user->ID);
+        $session_token = $this->generate_session_token($user->ID);
 
         // Return the session token
         return new WP_REST_Response(array('message' => 'User logged in successfully.', 'token' => $session_token), 200);
@@ -175,13 +193,15 @@ class User_API
         $headers = getallheaders();
         if (isset($headers['X-Session-Token'])) {
             $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = PM_Helper::get_user_id_from_token($session_token);
+            $user_id = $this->get_user_id_from_token($session_token);
             if ($user_id) {
                 // Validate the session token
                 $stored_session_token = get_user_meta($user_id, 'pm_session_token', true);
                 $session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
 
                 if ($stored_session_token !== $session_token || time() > $session_token_expiration) {
+// If token is invalid or expired, log the user out
+                    $this->logout_user($request);
                     return new WP_REST_Response(array('message' => 'Invalid or expired session token.'), 403);
                 }
 
@@ -195,12 +215,53 @@ class User_API
         return new WP_REST_Response(array('message' => 'Unauthorized'), 401);
     }
 
+    private function generate_session_token($user_id)
+    {
+        $session_token = wp_generate_password(32, false);
+        update_user_meta($user_id, 'pm_session_token', $session_token);
+        update_user_meta($user_id, 'pm_session_token_expiration', time() + 600); // 10 minutes expiration
+        return $session_token;
+    }
+
+    private function get_user_id_from_token($token)
+    {
+        global $wpdb;
+        $user_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value = %s",
+            'pm_session_token',
+            $token
+        ));
+
+        return $user_id ? intval($user_id) : null;
+    }
+
+    public function validate_token($request)
+    {
+        $headers = getallheaders();
+        if (isset($headers['X-Session-Token'])) {
+            $session_token = sanitize_text_field($headers['X-Session-Token']);
+            $user_id = $this->get_user_id_from_token($session_token);
+            if ($user_id) {
+                // Validate the session token
+                $stored_session_token = get_user_meta($user_id, 'pm_session_token', true);
+                $session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
+
+                if ($stored_session_token === $session_token && time() <= $session_token_expiration) {
+                    return true;
+                } else{
+                    $this->logout_user($request);
+                }
+            }
+        }
+        return false;
+    }
+
     public function logout_user($request)
     {
         $headers = getallheaders();
         if (isset($headers['X-Session-Token'])) {
             $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = PM_Helper::get_user_id_from_token($session_token);
+            $user_id = $this->get_user_id_from_token($session_token);
             if ($user_id) {
                 delete_user_meta($user_id, 'pm_session_token');
                 delete_user_meta($user_id, 'pm_session_token_expiration');

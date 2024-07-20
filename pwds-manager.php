@@ -108,9 +108,9 @@ if (!function_exists('pm_uninstall_plugin')) {
 if (!function_exists('pm_initialize_plugin')) {
     function pm_initialize_plugin()
     {
+        require_once PM_INC . 'class-helper.php';
         require_once PM_INC . 'class-user-api.php';
         require_once PM_INC . 'class-password-api.php';
-        require_once PM_INC . 'helper-functions.php';
     }
     
     add_action('plugins_loaded', 'pm_initialize_plugin');

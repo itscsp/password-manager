@@ -81,20 +81,22 @@ class Password_API
             return new WP_REST_Response(array('message' => 'Username and site URL already exist. Please update them.'), 409);
         }
 
-        // Encrypt the data using the secret key
-        $encrypted_username = PM_Helper::encrypt_data($username, $secret_key);
-        $encrypted_password = PM_Helper::encrypt_data($password, $secret_key);
-        $encrypted_url = PM_Helper::encrypt_data($url, $secret_key);
-        $encrypted_note = PM_Helper::encrypt_data($note, $secret_key);
+        // Encrypt the password using AES-GCM
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-128-gcm'));
+        $tag = null;
+        $encrypted_password = openssl_encrypt($password, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
+
+        // Store the encrypted password, IV, and tag together
+        $encrypted_password = base64_encode($encrypted_password . '::' . $iv . '::' . $tag);
 
         $wpdb->insert(
             $table_name,
             array(
                 'user_id' => $user_id,
-                'username' => $encrypted_username,
+                'username' => $username,
                 'password' => $encrypted_password,
-                'url' => $encrypted_url,
-                'note' => $encrypted_note,
+                'url' => $url,
+                'note' => $note,
             )
         );
 
@@ -121,10 +123,8 @@ class Password_API
         $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE user_id = %d", $user_id), ARRAY_A);
 
         foreach ($results as &$result) {
-            $result['username'] = PM_Helper::decrypt_data($result['username'], $secret_key);
-            $result['password'] = PM_Helper::decrypt_data($result['password'], $secret_key);
-            $result['url'] = PM_Helper::decrypt_data($result['url'], $secret_key);
-            $result['note'] = PM_Helper::decrypt_data($result['note'], $secret_key);
+            list($encrypted_data, $iv, $tag) = explode('::', base64_decode($result['password']), 3);
+            $result['password'] = openssl_decrypt($encrypted_data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
         }
 
         $response = new WP_REST_Response($results, 200);
@@ -168,19 +168,21 @@ class Password_API
             return new WP_REST_Response(array('message' => 'Password entry not found.'), 404);
         }
 
-        // Encrypt the data using the secret key
-        $encrypted_username = PM_Helper::encrypt_data($username, $secret_key);
-        $encrypted_password = PM_Helper::encrypt_data($password, $secret_key);
-        $encrypted_url = PM_Helper::encrypt_data($url, $secret_key);
-        $encrypted_note = PM_Helper::encrypt_data($note, $secret_key);
+        // Encrypt the password using AES-GCM
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-128-gcm'));
+        $tag = null;
+        $encrypted_password = openssl_encrypt($password, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
+
+        // Store the encrypted password, IV, and tag together
+        $encrypted_password = base64_encode($encrypted_password . '::' . $iv . '::' . $tag);
 
         $wpdb->update(
             $table_name,
             array(
-                'username' => $encrypted_username,
+                'username' => $username,
                 'password' => $encrypted_password,
-                'url' => $encrypted_url,
-                'note' => $encrypted_note,
+                'url' => $url,
+                'note' => $note,
             ),
             array(
                 'id' => $password_id,
@@ -254,11 +256,9 @@ class Password_API
             return new WP_REST_Response(array('message' => 'Password entry not found.'), 404);
         }
 
-        // Decrypt the data
-        $result['username'] = PM_Helper::decrypt_data($result['username'], $secret_key);
-        $result['password'] = PM_Helper::decrypt_data($result['password'], $secret_key);
-        $result['url'] = PM_Helper::decrypt_data($result['url'], $secret_key);
-        $result['note'] = PM_Helper::decrypt_data($result['note'], $secret_key);
+        // Decrypt the password
+        list($encrypted_data, $iv, $tag) = explode('::', base64_decode($result['password']), 3);
+        $result['password'] = openssl_decrypt($encrypted_data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
 
         return new WP_REST_Response($result, 200);
     }
