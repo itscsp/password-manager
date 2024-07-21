@@ -10,7 +10,7 @@ class PM_Helper
 
     public static function init()
     {
-        self::$master_key = getenv('MASTER_KEY'); // Ensure you have set this in your server environment
+        self::$master_key = 'Qf2P£oz@m?x27`cJ_,voJZF(wvi*4j3b2]e'; // Ensure you have set this in your server environment
     }
 
     public static function encrypt_key($key)
@@ -21,7 +21,7 @@ class PM_Helper
         return base64_encode($encrypted_key . '::' . $iv . '::' . $tag);
     }
 
-    public static function decrypt_key($encrypted_key)
+    public static function decrypt_key($encrypted_key) 
     {
         list($encrypted_data, $iv, $tag) = explode('::', base64_decode($encrypted_key), 3);
         return openssl_decrypt($encrypted_data, 'aes-256-gcm', self::$master_key, OPENSSL_RAW_DATA, $iv, $tag);
@@ -50,15 +50,7 @@ class PM_Helper
     public static function validate_token($request)
     {
         $headers = getallheaders();
-        // if (isset($headers['X-Session-Token'])) {
-        //     $session_token = sanitize_text_field($headers['X-Session-Token']);
-        //     $user_id = self::get_user_id_from_token($session_token);
-        //     if ($user_id) {
-        //         return true;
-        //     }
-        // }
-        // return false;
-
+    
         if (isset($headers['X-Session-Token'])) {
             $session_token = sanitize_text_field($headers['X-Session-Token']);
             $user_id = self::get_user_id_from_token($session_token);
@@ -68,8 +60,8 @@ class PM_Helper
                 $session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
 
                 if ($stored_session_token !== $session_token || time() > $session_token_expiration) {
-                    self::logout_user($request);
-                    return new WP_REST_Response(array('message' => 'Invalid or expired session token.'), 403);
+                    
+                    return self::logout_user($request);
                 }
 
                 // Renew the session token expiration
@@ -87,12 +79,23 @@ class PM_Helper
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-128-gcm'));
         $tag = null;
         $encrypted_data = openssl_encrypt($data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
-        return base64_encode($encrypted_data . '::' . $iv . '::' . $tag);
+
+        // Create HMAC for the encrypted data
+        $hmac = hash_hmac('sha256', $encrypted_data, $secret_key);
+
+        return base64_encode($encrypted_data . '::' . $iv . '::' . $tag . '::' . $hmac);
     }
 
     public static function decrypt_data($encrypted_data, $secret_key)
     {
-        list($encrypted_data, $iv, $tag) = explode('::', base64_decode($encrypted_data), 3);
+        list($encrypted_data, $iv, $tag, $hmac) = explode('::', base64_decode($encrypted_data), 4);
+
+        // Verify HMAC
+        $calculated_hmac = hash_hmac('sha256', $encrypted_data, $secret_key);
+        if (!hash_equals($hmac, $calculated_hmac)) {
+            return false; // Data integrity check failed
+        }
+
         return openssl_decrypt($encrypted_data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
     }
 
@@ -108,7 +111,7 @@ class PM_Helper
                 return new WP_REST_Response(array('message' => 'User logged out successfully.'), 200);
             }
         }
-        return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
+        return new WP_REST_Response(array('message' => 'Invalid or expired session token.'), 403);
     }
 }
 

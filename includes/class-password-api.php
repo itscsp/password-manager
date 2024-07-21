@@ -47,6 +47,12 @@ class Password_API
             'callback' => array($this, 'get_password'),
             'permission_callback' => array('PM_Helper', 'validate_token')
         ));
+
+        register_rest_route('password-manager/v1', '/search-passwords', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'search_passwords'),
+            'permission_callback' => array('PM_Helper', 'validate_token')
+        ));
     }
 
     public function add_password($request)
@@ -65,7 +71,11 @@ class Password_API
 
         $username = sanitize_text_field($request['username']);
         $password = sanitize_text_field($request['password']);
+
+        // Sanitize and remove https:// from URL (if present)
         $url = sanitize_text_field($request['url']);
+        $url = preg_replace('/^https?:\/\/(.+?)(?:$|\/)/i', '$1', $url);
+
         $note = sanitize_textarea_field($request['note']);
 
         global $wpdb;
@@ -74,7 +84,9 @@ class Password_API
         // Check if the username and URL already exist for this user
         $existing_entry = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table_name WHERE user_id = %d AND username = %s AND url = %s",
-            $user_id, $username, $url
+            $user_id,
+            $username,
+            $url
         ));
 
         if ($existing_entry) {
@@ -84,7 +96,6 @@ class Password_API
         // Encrypt the data using the secret key
         $encrypted_username = PM_Helper::encrypt_data($username, $secret_key);
         $encrypted_password = PM_Helper::encrypt_data($password, $secret_key);
-        $encrypted_url = PM_Helper::encrypt_data($url, $secret_key);
         $encrypted_note = PM_Helper::encrypt_data($note, $secret_key);
 
         $wpdb->insert(
@@ -93,7 +104,7 @@ class Password_API
                 'user_id' => $user_id,
                 'username' => $encrypted_username,
                 'password' => $encrypted_password,
-                'url' => $encrypted_url,
+                'url' => $url,
                 'note' => $encrypted_note,
             )
         );
@@ -122,9 +133,6 @@ class Password_API
 
         foreach ($results as &$result) {
             $result['username'] = PM_Helper::decrypt_data($result['username'], $secret_key);
-            $result['password'] = PM_Helper::decrypt_data($result['password'], $secret_key);
-            $result['url'] = PM_Helper::decrypt_data($result['url'], $secret_key);
-            $result['note'] = PM_Helper::decrypt_data($result['note'], $secret_key);
         }
 
         $response = new WP_REST_Response($results, 200);
@@ -161,7 +169,8 @@ class Password_API
         // Check if the password entry exists
         $existing_entry = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table_name WHERE id = %d AND user_id = %d",
-            $password_id, $user_id
+            $password_id,
+            $user_id
         ));
 
         if (!$existing_entry) {
@@ -171,7 +180,6 @@ class Password_API
         // Encrypt the data using the secret key
         $encrypted_username = PM_Helper::encrypt_data($username, $secret_key);
         $encrypted_password = PM_Helper::encrypt_data($password, $secret_key);
-        $encrypted_url = PM_Helper::encrypt_data($url, $secret_key);
         $encrypted_note = PM_Helper::encrypt_data($note, $secret_key);
 
         $wpdb->update(
@@ -208,7 +216,8 @@ class Password_API
         // Check if the password entry exists
         $existing_entry = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table_name WHERE id = %d AND user_id = %d",
-            $password_id, $user_id
+            $password_id,
+            $user_id
         ));
 
         if (!$existing_entry) {
@@ -234,7 +243,7 @@ class Password_API
         $password_id = $request['id'];
 
         if (!$user_id) {
-            return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
+            return new WP_REST_Response(array('message' => 'Invalid session token. Please login.'), 403);
         }
 
         // Retrieve and decrypt the secret key
@@ -247,7 +256,8 @@ class Password_API
         // Fetch the password entry
         $result = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table_name WHERE id = %d AND user_id = %d",
-            $password_id, $user_id
+            $password_id,
+            $user_id
         ), ARRAY_A);
 
         if (!$result) {
@@ -257,11 +267,46 @@ class Password_API
         // Decrypt the data
         $result['username'] = PM_Helper::decrypt_data($result['username'], $secret_key);
         $result['password'] = PM_Helper::decrypt_data($result['password'], $secret_key);
-        $result['url'] = PM_Helper::decrypt_data($result['url'], $secret_key);
         $result['note'] = PM_Helper::decrypt_data($result['note'], $secret_key);
 
         return new WP_REST_Response($result, 200);
     }
+    public function search_passwords($request) {
+        $headers = getallheaders();
+        $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
+        $user_id = PM_Helper::get_user_id_from_token($session_token);
+      
+        if (!$user_id) {
+          return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
+        }
+      
+        $search_term = isset($request['url']) ? sanitize_text_field($request['url']) : '';
+      
+        if (empty($search_term)) {
+          return new WP_REST_Response(array('message' => 'URL parameter is required.'), 400);
+        }
+      
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'password_manager';
+      
+        // Search using the provided URL or string
+        $like_url = '%' . $wpdb->esc_like($search_term) . '%';
+        $exact_url = $wpdb->esc_like($search_term); // Escape for safe comparison
+        $query = "SELECT * FROM $table_name WHERE user_id = %d AND (url LIKE %s OR url = %s)";
+        $query_params = array($user_id, $like_url, $exact_url);
+      
+        $results = $wpdb->get_results($wpdb->prepare($query, $query_params), ARRAY_A);
+      
+        // Debugging: Log the query
+        error_log($wpdb->last_query);
+      
+        if (empty($results)) {
+          return new WP_REST_Response(array('message' => 'No passwords found for the provided search term.'), 200);
+        } else {
+          return new WP_REST_Response($results, 200);
+        }
+      }
+      
 }
 
 new Password_API();

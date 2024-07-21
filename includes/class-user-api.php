@@ -46,6 +46,71 @@ class User_API
         ));
     }
 
+
+    // public function start_registration($request)
+    // {
+    //     $email = sanitize_email($request['email']);
+
+    //     if (!is_email($email)) {
+    //         return new WP_REST_Response(array('message' => 'Invalid email address.'), 400);
+    //     }
+
+    //     if (email_exists($email)) {
+    //         return new WP_REST_Response(array('message' => 'Email already exists.'), 409);
+    //     }
+
+    //     $verification_token = wp_generate_password(32, false);
+    //     set_transient('pm_verification_token_' . $email, $verification_token, 3600); // 1 hour expiration
+
+    //     $verification_url = add_query_arg(array(
+    //         'token' => $verification_token,
+    //         'email' => $email,
+    //     ), site_url('/wp-json/password-manager/v1/verify-email'));
+
+    //     // Load the email template
+    //     $template_path = PM_PLUGIN_DIR . '/email-templates/welcome-email.html';
+    //     $template = file_get_contents($template_path); 
+
+    //     if ($template === false) {
+    //         return new WP_REST_Response(array('message' => 'Email template not found.'), 500);
+    //     }
+
+    //     // Create the image tag
+    //     $logo_url = plugins_url('email-templates/logo.png', __FILE__); // Correctly get the URL of the logo
+    //     $logo_img_tag = '<img src="' . esc_url($logo_url) . '" alt="Company Logo">';
+
+    //     // Replace placeholders with actual values
+    //     $template = str_replace('[verification_url]', esc_url($verification_url), $template);
+    //     $template = str_replace('[logo_img_tag]', $logo_img_tag, $template);
+
+    //     $headers = array('Content-Type: text/html; charset=UTF-8');
+
+    //     // Set the "From" name and email
+    //     add_filter('wp_mail_from', function ($original_email_address) {
+    //         return 'onepass@chethanspoojary.com';
+    //     });
+    //     add_filter('wp_mail_from_name', function ($original_email_from) {
+    //         return '*|OnePass';
+    //     });
+
+    //     wp_mail(
+    //         $email,
+    //         'Email Verification',
+    //         $template,
+    //         $headers
+    //     );
+
+    //     // Remove the filters after sending the email to prevent affecting other emails
+    //     remove_filter('wp_mail_from', function ($original_email_address) {
+    //         return 'hello@chethanspoojar.com';
+    //     });
+    //     remove_filter('wp_mail_from_name', function ($original_email_from) {
+    //         return '*|OnePass';
+    //     });
+
+    //     return new WP_REST_Response(array('message' => 'Verification email sent. Please check your email.'), 200);
+    // }
+
     public function start_registration($request)
     {
         $email = sanitize_email($request['email']);
@@ -66,14 +131,43 @@ class User_API
             'email' => $email,
         ), site_url('/wp-json/password-manager/v1/verify-email'));
 
+        // Load the email template
+        $template_path = PM_PLUGIN_DIR . '/email-templates/welcome-email.html';
+        $template = file_get_contents($template_path);
+
+        if ($template === false) {
+            return new WP_REST_Response(array('message' => 'Email template not found.'), 500);
+        }
+
+        // Create the image tag
+        $logo_url = plugins_url('email-templates/logo.png', __FILE__); // Correctly get the URL of the logo
+        $logo_img_tag = '<img src="' . esc_url($logo_url) . '" alt="Company Logo">';
+
+        // Replace placeholders with actual values
+        $template = str_replace('[verification_url]', esc_url($verification_url), $template);
+        $template = str_replace('[logo_img_tag]', $logo_img_tag, $template);
+
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        //   Set the "From" name and email
+        add_filter('wp_mail_from', function ($original_email_address) {
+            return 'onepass@chethanspoojary.com';
+        });
+        add_filter('wp_mail_from_name', function ($original_email_from) {
+            return '*|OnePass';
+        });
+
+
         wp_mail(
-            $email,
+            $email, 
             'Email Verification',
-            "Please click the following link to verify your email address: $verification_url"
+            $template,
+            $headers
         );
 
         return new WP_REST_Response(array('message' => 'Verification email sent. Please check your email.'), 200);
     }
+
+
 
     public function verify_email($request)
     {
@@ -129,8 +223,39 @@ class User_API
         $secret_key = wp_generate_password(32, true, true);
         $encrypted_secret_key = PM_Helper::encrypt_key($secret_key);
         update_user_meta($user_id, 'pm_secret_key', $encrypted_secret_key);
-        wp_mail($email, 'Your Secret Key', "Here is your secret key: $secret_key");
 
+        
+        // Load the email template
+        $template_path = PM_PLUGIN_DIR . '/email-templates/user-secreat-key.html';
+        $template = file_get_contents($template_path);
+
+        if ($template === false) {
+            return new WP_REST_Response(array('message' => 'Email template not found.'), 500);
+        }
+
+        // Create the image tag
+        $logo_url = plugins_url('email-templates/logo.png', __FILE__); // Correctly get the URL of the logo
+        $logo_img_tag = '<img src="' . esc_url($logo_url) . '" alt="Company Logo">';
+
+        // Replace placeholders with actual values
+        $template = str_replace('[secret_key]', $secret_key, $template);
+        $template = str_replace('[logo_img_tag]', $logo_img_tag, $template);
+
+        $headers = array('Content-Type: text/html; charset=UTF-8'); 
+        //   Set the "From" name and email
+        add_filter('wp_mail_from', function ($original_email_address) {
+            return 'onepass@chethanspoojary.com';
+        });
+        add_filter('wp_mail_from_name', function ($original_email_from) {
+            return '*|OnePass';
+        });
+
+        wp_mail(
+            $email, 
+            'Your Secret Key',
+            $template,
+            $headers
+        );
         delete_transient('pm_verification_token_' . $email);
 
         return new WP_REST_Response(array('message' => 'User registered successfully. Please check your email for the secret key.', 'user_id' => $user_id), 201);
