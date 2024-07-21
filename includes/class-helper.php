@@ -99,6 +99,16 @@ class PM_Helper
         return openssl_decrypt($encrypted_data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
     }
 
+    public static function is_valid_url($url)
+    {
+        return filter_var($url, FILTER_VALIDATE_URL) !== false;
+    }
+
+    public static function is_valid_note_length($note)
+    {
+        return strlen($note) <= 250;
+    }
+
     public static function logout_user($request)
     {
         $headers = getallheaders();
