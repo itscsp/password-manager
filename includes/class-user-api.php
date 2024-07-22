@@ -94,7 +94,7 @@ class User_API
 
 
         wp_mail(
-            $email, 
+            $email,
             'Email Verification',
             $template,
             $headers
@@ -121,6 +121,8 @@ class User_API
         return new WP_REST_Response(array('message' => PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token)), 200);
     }
 
+
+
     public function complete_registration($request)
     {
         $email = sanitize_email($request['email']);
@@ -129,6 +131,7 @@ class User_API
         $username = sanitize_text_field($request['username']);
         $password = sanitize_text_field($request['password']);
         $confirm_password = sanitize_text_field($request['confirm_password']);
+        $master_key = sanitize_text_field($request['master_key']); // 6-digit master key
 
         if ($password !== $confirm_password) {
             return new WP_REST_Response(array('message' => 'Passwords do not match.'), 400);
@@ -155,12 +158,14 @@ class User_API
         $user->set_role('password_owner');
         update_user_meta($user_id, 'first_name', $name);
 
-        // Generate and send the secret key via email
+        // Generate the secret key
         $secret_key = wp_generate_password(32, true, true);
-        $encrypted_secret_key = PM_Helper::encrypt_key($secret_key);
-        update_user_meta($user_id, 'pm_secret_key', $encrypted_secret_key);
 
-        
+        // Hash the secret key with the master key
+        $hashed_secret_key = PM_Helper::hash_data($secret_key, $master_key);
+        update_user_meta($user_id, 'pm_secret_key', $hashed_secret_key);
+
+
         // Load the email template
         $template_path = PM_PLUGIN_DIR . '/email-templates/user-secreat-key.html';
         $template = file_get_contents($template_path);
@@ -177,7 +182,7 @@ class User_API
         $template = str_replace('[secret_key]', $secret_key, $template);
         $template = str_replace('[logo_img_tag]', $logo_img_tag, $template);
 
-        $headers = array('Content-Type: text/html; charset=UTF-8'); 
+        $headers = array('Content-Type: text/html; charset=UTF-8');
         //   Set the "From" name and email
         add_filter('wp_mail_from', function ($original_email_address) {
             return 'onepass@chethanspoojary.com';
@@ -187,7 +192,7 @@ class User_API
         });
 
         wp_mail(
-            $email, 
+            $email,
             'Your Secret Key',
             $template,
             $headers
@@ -197,10 +202,45 @@ class User_API
         return new WP_REST_Response(array('message' => 'User registered successfully. Please check your email for the secret key.', 'user_id' => $user_id), 201);
     }
 
+    // public function login_user($request)
+    // {
+    //     $username = sanitize_text_field($request['username']);
+    //     $provided_secret_key = sanitize_text_field($request['secret_key']);
+    //     $password = sanitize_text_field($request['password']);
+
+    //     $user = get_user_by('login', $username);
+
+    //     if (!$user) {
+    //         return new WP_REST_Response(array('message' => 'Invalid username.'), 403);
+    //     }
+
+    //     // Check the password
+    //     $user = wp_authenticate($username, $password);
+    //     if (is_wp_error($user)) {
+    //         return new WP_REST_Response(array('message' => 'Invalid password.'), 403);
+    //     }
+
+    //     // Retrieve and decrypt the stored secret key
+    //     $encrypted_secret_key = get_user_meta($user->ID, 'pm_secret_key', true);
+    //     $stored_secret_key = PM_Helper::decrypt_key($encrypted_secret_key);
+
+    //     // Compare the provided secret key with the stored secret key
+    //     if ($provided_secret_key !== $stored_secret_key) {
+    //         return new WP_REST_Response(array('message' => 'Invalid secret key.'), 403);
+    //     }
+
+    //     // Generate a session token
+    //     $session_token = PM_Helper::generate_session_token($user->ID);
+
+    //     // Return the session token
+    //     return new WP_REST_Response(array('message' => 'User logged in successfully.', 'token' => $session_token), 200);
+    // }
+
     public function login_user($request)
     {
         $username = sanitize_text_field($request['username']);
         $provided_secret_key = sanitize_text_field($request['secret_key']);
+        $master_key = sanitize_text_field($request['master_key']); // 6-digit master key
         $password = sanitize_text_field($request['password']);
 
         $user = get_user_by('login', $username);
@@ -215,13 +255,12 @@ class User_API
             return new WP_REST_Response(array('message' => 'Invalid password.'), 403);
         }
 
-        // Retrieve and decrypt the stored secret key
-        $encrypted_secret_key = get_user_meta($user->ID, 'pm_secret_key', true);
-        $stored_secret_key = PM_Helper::decrypt_key($encrypted_secret_key);
+        // Retrieve the stored hashed secret key
+        $hashed_secret_key = get_user_meta($user->ID, 'pm_secret_key', true);
 
-        // Compare the provided secret key with the stored secret key
-        if ($provided_secret_key !== $stored_secret_key) {
-            return new WP_REST_Response(array('message' => 'Invalid secret key.'), 403);
+        // Compare the provided hashed secret key with the stored hashed secret key
+        if (!PM_Helper::verify_hash($provided_secret_key, $master_key, $hashed_secret_key)) {
+            return new WP_REST_Response(array('message' => 'Invalid secret key or master key.'), 403);
         }
 
         // Generate a session token
@@ -230,6 +269,7 @@ class User_API
         // Return the session token
         return new WP_REST_Response(array('message' => 'User logged in successfully.', 'token' => $session_token), 200);
     }
+
 
     public function refresh_session($request)
     {

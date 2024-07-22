@@ -6,26 +6,6 @@ if (!defined('ABSPATH')) {
 
 class PM_Helper
 {
-    private static $master_key;
-
-    public static function init()
-    {
-        self::$master_key = 'Qf2P£oz@m?x27`cJ_,voJZF(wvi*4j3b2]e'; // Ensure you have set this in your server environment
-    }
-
-    public static function encrypt_key($key)
-    {
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-gcm'));
-        $tag = null;
-        $encrypted_key = openssl_encrypt($key, 'aes-256-gcm', self::$master_key, OPENSSL_RAW_DATA, $iv, $tag);
-        return base64_encode($encrypted_key . '::' . $iv . '::' . $tag);
-    }
-
-    public static function decrypt_key($encrypted_key) 
-    {
-        list($encrypted_data, $iv, $tag) = explode('::', base64_decode($encrypted_key), 3);
-        return openssl_decrypt($encrypted_data, 'aes-256-gcm', self::$master_key, OPENSSL_RAW_DATA, $iv, $tag);
-    }
 
     public static function generate_session_token($user_id)
     {
@@ -50,7 +30,7 @@ class PM_Helper
     public static function validate_token($request)
     {
         $headers = getallheaders();
-    
+
         if (isset($headers['X-Session-Token'])) {
             $session_token = sanitize_text_field($headers['X-Session-Token']);
             $user_id = self::get_user_id_from_token($session_token);
@@ -60,7 +40,7 @@ class PM_Helper
                 $session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
 
                 if ($stored_session_token !== $session_token || time() > $session_token_expiration) {
-                    
+
                     return self::logout_user($request);
                 }
 
@@ -98,6 +78,18 @@ class PM_Helper
 
         return openssl_decrypt($encrypted_data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
     }
+
+    public static function hash_data($data, $key)
+    {
+        return hash_hmac('sha256', $data, $key);
+    }
+
+    public static function verify_hash($data, $key, $hash)
+    {
+        return hash_equals($hash, self::hash_data($data, $key));
+    }
+
+
 
     public static function is_valid_url($url)
     {
