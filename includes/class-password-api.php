@@ -17,42 +17,55 @@ class Password_API
         register_rest_route('password-manager/v1', '/add-password', array(
             'methods' => 'POST',
             'callback' => array($this, 'add_password'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'permission_callback' => array($this, 'handle_token_validation')
         ));
 
         // Add new route for retrieving passwords
         register_rest_route('password-manager/v1', '/get-passwords', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_passwords'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'permission_callback' => array($this, 'handle_token_validation')
         ));
 
         // Add new route for updating passwords
         register_rest_route('password-manager/v1', '/update-password/(?P<id>\d+)', array(
             'methods' => 'PUT',
             'callback' => array($this, 'update_password'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'permission_callback' => array($this, 'handle_token_validation')
         ));
 
         // Add new route for deleting passwords
         register_rest_route('password-manager/v1', '/delete-password/(?P<id>\d+)', array(
             'methods' => 'DELETE',
             'callback' => array($this, 'delete_password'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'permission_callback' => array($this, 'handle_token_validation')
         ));
 
         // Add new route for retrieving individual password
         register_rest_route('password-manager/v1', '/get-password/(?P<id>\d+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_password'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'permission_callback' => array($this, 'handle_token_validation')
         ));
 
+        // Add new route for searching passwords
         register_rest_route('password-manager/v1', '/search-passwords', array(
             'methods' => 'GET',
             'callback' => array($this, 'search_passwords'),
-            'permission_callback' => array('PM_Helper', 'validate_token')
+            'permission_callback' => array($this, 'handle_token_validation')
         ));
+    }
+
+    
+    public function handle_token_validation($request)
+    {
+        if (PM_Helper::validate_token($request)) {
+            // Token is valid
+            return true;
+        } else {
+            // Token is invalid or expired
+            return new WP_Error('rest_forbidden', 'Invalid or expired session token.', array('status' => 403));
+        }
     }
 
     public function add_password($request)
@@ -66,8 +79,12 @@ class Password_API
         }
 
         // Retrieve and decrypt the secret key
-        $encrypted_secret_key = get_user_meta($user_id, 'pm_secret_key', true);
-        $secret_key = PM_Helper::decrypt_key($encrypted_secret_key);
+        $encrypted_secret_key = get_user_meta($user_id, 'pm_encrypted_secret_key', true);
+        $salt = get_user_meta($user_id, 'pm_salt', true);
+        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
+
+        // Generate the encryption key from the master password and salt
+        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
 
         $username = sanitize_text_field($request['username']);
         $password = sanitize_text_field($request['password']);
@@ -79,9 +96,7 @@ class Password_API
             return new WP_REST_Response(array('message' => 'Invalid URL format.'), 400);
         }
 
-        $url = preg_replace('/^https?:\/\/(.+?)(?:$|\/)/i', '$1', $url);
-
-        if (strlen($note) > 250) {
+        if (!PM_Helper::is_valid_note_length($note)) {
             return new WP_REST_Response(array('message' => 'Note cannot exceed 250 characters.'), 400);
         }
 
@@ -100,10 +115,10 @@ class Password_API
             return new WP_REST_Response(array('message' => 'Username and site URL already exist. Please update them.'), 409);
         }
 
-        // Encrypt the data using the secret key
-        $encrypted_username = PM_Helper::encrypt_data($username, $secret_key);
-        $encrypted_password = PM_Helper::encrypt_data($password, $secret_key);
-        $encrypted_note = PM_Helper::encrypt_data($note, $secret_key);
+        // Encrypt the data using the encryption key
+        $encrypted_username = PM_Helper::encrypt_data($username, $encryption_key);
+        $encrypted_password = PM_Helper::encrypt_data($password, $encryption_key);
+        $encrypted_note = PM_Helper::encrypt_data($note, $encryption_key);
 
         $wpdb->insert(
             $table_name,
@@ -119,21 +134,24 @@ class Password_API
         return new WP_REST_Response(array('message' => 'Password added successfully.'), 201);
     }
 
-
     public function update_password($request)
     {
         $headers = getallheaders();
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
         $password_id = $request['id'];
+        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
 
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
         }
 
         // Retrieve and decrypt the secret key
-        $encrypted_secret_key = get_user_meta($user_id, 'pm_secret_key', true);
-        $secret_key = PM_Helper::decrypt_key($encrypted_secret_key);
+        $encrypted_secret_key = get_user_meta($user_id, 'pm_encrypted_secret_key', true);
+        $salt = get_user_meta($user_id, 'pm_salt', true);
+
+        // Generate the encryption key from the master password and salt
+        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
 
         $username = sanitize_text_field($request['username']);
         $password = sanitize_text_field($request['password']);
@@ -144,9 +162,6 @@ class Password_API
         if (!PM_Helper::is_valid_url($url)) {
             return new WP_REST_Response(array('message' => 'Invalid URL format.'), 400);
         }
-
-        $url = preg_replace('/^https?:\/\/(.+?)(?:$|\/)/i', '$1', $url);
-
 
         if (!PM_Helper::is_valid_note_length($note)) {
             return new WP_REST_Response(array('message' => 'Note cannot exceed 250 characters.'), 400);
@@ -166,10 +181,10 @@ class Password_API
             return new WP_REST_Response(array('message' => 'Password entry not found.'), 404);
         }
 
-        // Encrypt the data using the secret key
-        $encrypted_username = PM_Helper::encrypt_data($username, $secret_key);
-        $encrypted_password = PM_Helper::encrypt_data($password, $secret_key);
-        $encrypted_note = PM_Helper::encrypt_data($note, $secret_key);
+        // Encrypt the data using the encryption key
+        $encrypted_username = PM_Helper::encrypt_data($username, $encryption_key);
+        $encrypted_password = PM_Helper::encrypt_data($password, $encryption_key);
+        $encrypted_note = PM_Helper::encrypt_data($note, $encryption_key);
 
         $wpdb->update(
             $table_name,
@@ -193,14 +208,18 @@ class Password_API
         $headers = getallheaders();
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
+        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
 
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
         }
 
         // Retrieve and decrypt the secret key
-        $encrypted_secret_key = get_user_meta($user_id, 'pm_secret_key', true);
-        $secret_key = PM_Helper::decrypt_key($encrypted_secret_key);
+        $encrypted_secret_key = get_user_meta($user_id, 'pm_encrypted_secret_key', true);
+        $salt = get_user_meta($user_id, 'pm_salt', true);
+
+        // Generate the encryption key from the master password and salt
+        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'password_manager';
@@ -208,7 +227,9 @@ class Password_API
         $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE user_id = %d", $user_id), ARRAY_A);
 
         foreach ($results as &$result) {
-            $result['username'] = PM_Helper::decrypt_data($result['username'], $secret_key);
+            $result['username'] = PM_Helper::decrypt_data($result['username'], $encryption_key);
+            $result['password'] = PM_Helper::decrypt_data($result['password'], $encryption_key);
+            $result['note'] = PM_Helper::decrypt_data($result['note'], $encryption_key);
         }
 
         $response = new WP_REST_Response($results, 200);
@@ -218,7 +239,6 @@ class Password_API
 
         return $response;
     }
-
 
     public function delete_password($request)
     {
@@ -262,14 +282,18 @@ class Password_API
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
         $password_id = $request['id'];
+        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
 
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token. Please login.'), 403);
         }
 
         // Retrieve and decrypt the secret key
-        $encrypted_secret_key = get_user_meta($user_id, 'pm_secret_key', true);
-        $secret_key = PM_Helper::decrypt_key($encrypted_secret_key);
+        $encrypted_secret_key = get_user_meta($user_id, 'pm_encrypted_secret_key', true);
+        $salt = get_user_meta($user_id, 'pm_salt', true);
+
+        // Generate the encryption key from the master password and salt
+        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'password_manager';
@@ -286,17 +310,19 @@ class Password_API
         }
 
         // Decrypt the data
-        $result['username'] = PM_Helper::decrypt_data($result['username'], $secret_key);
-        $result['password'] = PM_Helper::decrypt_data($result['password'], $secret_key);
-        $result['note'] = PM_Helper::decrypt_data($result['note'], $secret_key);
+        $result['username'] = PM_Helper::decrypt_data($result['username'], $encryption_key);
+        $result['password'] = PM_Helper::decrypt_data($result['password'], $encryption_key);
+        $result['note'] = PM_Helper::decrypt_data($result['note'], $encryption_key);
 
         return new WP_REST_Response($result, 200);
     }
+
     public function search_passwords($request)
     {
         $headers = getallheaders();
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
+        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
 
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
@@ -307,6 +333,13 @@ class Password_API
         if (empty($search_term)) {
             return new WP_REST_Response(array('message' => 'URL parameter is required.'), 400);
         }
+
+        // Retrieve and decrypt the secret key
+        $encrypted_secret_key = get_user_meta($user_id, 'pm_encrypted_secret_key', true);
+        $salt = get_user_meta($user_id, 'pm_salt', true);
+
+        // Generate the encryption key from the master password and salt
+        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'password_manager';
@@ -319,8 +352,12 @@ class Password_API
 
         $results = $wpdb->get_results($wpdb->prepare($query, $query_params), ARRAY_A);
 
-        // Debugging: Log the query
-        error_log($wpdb->last_query);
+        // Decrypt the results
+        foreach ($results as &$result) {
+            $result['username'] = PM_Helper::decrypt_data($result['username'], $encryption_key);
+            $result['password'] = PM_Helper::decrypt_data($result['password'], $encryption_key);
+            $result['note'] = PM_Helper::decrypt_data($result['note'], $encryption_key);
+        }
 
         if (empty($results)) {
             return new WP_REST_Response(array('message' => 'No passwords found for the provided search term.'), 200);

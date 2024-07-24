@@ -6,6 +6,40 @@ if (!defined('ABSPATH')) {
 
 class PM_Helper
 {
+    public static function generate_encryption_key($password, $salt)
+    {
+        $iterations = 10000;
+        $key_length = 32; // 256-bit key
+        return hash_pbkdf2('sha256', $password, $salt, $iterations, $key_length, true);
+    }
+
+    public static function encrypt_data($data, $key)
+    {
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+        $encrypted_data = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
+        return base64_encode($encrypted_data . '::' . $iv);
+    }
+
+    public static function decrypt_data($data, $key)
+    {
+        list($encrypted_data, $iv) = explode('::', base64_decode($data), 2);
+        return openssl_decrypt($encrypted_data, 'aes-256-cbc', $key, 0, $iv);
+    }
+
+    public static function generate_random_secret_key()
+    {
+        return bin2hex(random_bytes(32)); // 256-bit secret key
+    }
+
+    public static function hash_password($password)
+    {
+        return password_hash($password, PASSWORD_BCRYPT);
+    }
+
+    public static function verify_password($password, $hash)
+    {
+        return password_verify($password, $hash);
+    }
 
     public static function generate_session_token($user_id)
     {
@@ -30,7 +64,6 @@ class PM_Helper
     public static function validate_token($request)
     {
         $headers = getallheaders();
-
         if (isset($headers['X-Session-Token'])) {
             $session_token = sanitize_text_field($headers['X-Session-Token']);
             $user_id = self::get_user_id_from_token($session_token);
@@ -40,56 +73,18 @@ class PM_Helper
                 $session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
 
                 if ($stored_session_token !== $session_token || time() > $session_token_expiration) {
-
-                    return self::logout_user($request);
+                    return false; // Session token is invalid or expired
                 }
 
                 // Renew the session token expiration
                 update_user_meta($user_id, 'pm_session_token_expiration', time() + 600); // 10 minutes expiration
 
-                return true;
+                return true; // Session token is valid
             }
         }
 
-        return false;
+        return false; // Unauthorized
     }
-
-    public static function encrypt_data($data, $secret_key)
-    {
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-128-gcm'));
-        $tag = null;
-        $encrypted_data = openssl_encrypt($data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
-
-        // Create HMAC for the encrypted data
-        $hmac = hash_hmac('sha256', $encrypted_data, $secret_key);
-
-        return base64_encode($encrypted_data . '::' . $iv . '::' . $tag . '::' . $hmac);
-    }
-
-    public static function decrypt_data($encrypted_data, $secret_key)
-    {
-        list($encrypted_data, $iv, $tag, $hmac) = explode('::', base64_decode($encrypted_data), 4);
-
-        // Verify HMAC
-        $calculated_hmac = hash_hmac('sha256', $encrypted_data, $secret_key);
-        if (!hash_equals($hmac, $calculated_hmac)) {
-            return false; // Data integrity check failed
-        }
-
-        return openssl_decrypt($encrypted_data, 'aes-128-gcm', $secret_key, OPENSSL_RAW_DATA, $iv, $tag);
-    }
-
-    public static function hash_data($data, $key)
-    {
-        return hash_hmac('sha256', $data, $key);
-    }
-
-    public static function verify_hash($data, $key, $hash)
-    {
-        return hash_equals($hash, self::hash_data($data, $key));
-    }
-
-
 
     public static function is_valid_url($url)
     {
@@ -101,19 +96,25 @@ class PM_Helper
         return strlen($note) <= 250;
     }
 
-    public static function logout_user($request)
+    /**
+     * Generate a set of backup codes.
+     *
+     * @param int $count Number of backup codes to generate.
+     * @return array Array of backup codes.
+     */
+    public static function generate_backup_codes($count = 5)
     {
-        $headers = getallheaders();
-        if (isset($headers['X-Session-Token'])) {
-            $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = self::get_user_id_from_token($session_token);
-            if ($user_id) {
-                delete_user_meta($user_id, 'pm_session_token');
-                delete_user_meta($user_id, 'pm_session_token_expiration');
-                return new WP_REST_Response(array('message' => 'User logged out successfully.'), 200);
-            }
+        $backup_codes = [];
+        for ($i = 0; $i < $count; $i++) {
+            $backup_codes[] = wp_generate_password(12, false); // Generate a 12-character long code
         }
-        return new WP_REST_Response(array('message' => 'Invalid or expired session token.'), 403);
+        return $backup_codes;
+    }
+
+    // This function can be used for initializing any settings or properties.
+    public static function init()
+    {
+        // Placeholder for any initialization logic if needed
     }
 }
 
