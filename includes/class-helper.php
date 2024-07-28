@@ -19,12 +19,86 @@ class PM_Helper
         $encrypted_data = openssl_encrypt($data, 'aes-256-cbc', $key, 0, $iv);
         return base64_encode($encrypted_data . '::' . $iv);
     }
+    /*
+
+public static function encrypt_data($data, $key)
+{
+    try {
+        // Validate key length
+        if (strlen($key) !== 32) {
+            throw new Exception("Invalid key length. Must be 32 characters.");
+        }
+
+        $iv_length = openssl_cipher_iv_length('aes-256-cbc');
+        $iv = openssl_random_pseudo_bytes($iv_length);
+        if ($iv === false) {
+            throw new Exception("Failed to generate IV.");
+        }
+
+        $encrypted_data = openssl_encrypt($data, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+        if ($encrypted_data === false) {
+            throw new Exception("Encryption failed.");
+        }
+
+        return base64_encode($encrypted_data . '::' . $iv);
+    } catch (Exception $e) {
+        // Log the error (consider using a logging library or framework)
+        error_log('Encryption error: ' . $e->getMessage());
+
+        // Rethrow the exception for further handling
+        throw $e;
+    }
+}
+
+    */
 
     public static function decrypt_data($data, $key)
     {
         list($encrypted_data, $iv) = explode('::', base64_decode($data), 2);
         return openssl_decrypt($encrypted_data, 'aes-256-cbc', $key, 0, $iv);
     }
+
+    /*
+public static function decrypt_data($data, $key)
+{
+    try {
+        // Validate key length
+        if (strlen($key) !== 32) {
+            throw new Exception("Invalid key length. Must be 32 characters.");
+        }
+
+        $decoded = base64_decode($data, true);
+        if ($decoded === false) {
+            throw new Exception("Invalid base64 encoded data.");
+        }
+
+        $parts = explode('::', $decoded, 2);
+        if (count($parts) !== 2) {
+            throw new Exception("Invalid data format.");
+        }
+
+        list($encrypted_data, $iv) = $parts;
+        if (strlen($iv) !== openssl_cipher_iv_length('aes-256-cbc')) {
+            throw new Exception("Invalid IV length.");
+        }
+
+        $decrypted_data = openssl_decrypt($encrypted_data, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+        if ($decrypted_data === false) {
+            throw new Exception("Decryption failed.");
+        }
+
+        return $decrypted_data;
+    } catch (Exception $e) {
+        // Log the error (consider using a logging library or framework)
+        error_log('Decryption error: ' . $e->getMessage());
+
+        // Rethrow the exception for further handling
+        throw $e;
+    }
+}
+
+
+    */
 
     public static function generate_random_secret_key()
     {
