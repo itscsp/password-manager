@@ -39,7 +39,6 @@ class User_API
             'permission_callback' => array($this, 'handle_token_validation')
         ));
 
-
         register_rest_route('password-manager/v1', '/logout', array(
             'methods' => 'POST',
             'callback' => array($this, 'logout_user'),
@@ -106,13 +105,103 @@ class User_API
 
     public function handle_token_validation($request)
     {
-        if (PM_Helper::validate_token($request)) {
-            // Token is valid
-            return true;
-        } else {
-            // Token is invalid or expired
-            return new WP_Error('rest_forbidden', 'Invalid or expired session token.', array('status' => 403));
+
+        $headers = getallheaders();
+        if (isset($headers['X-Session-Token'])) {
+            $session_token = sanitize_text_field($headers['X-Session-Token']);
+            $user_id = PM_Helper::get_user_id_from_token($session_token);
+            if ($user_id) {
+                // Retrieve the 'x-session-token' header
+                $headers = $request->get_header('X-Session-Token');
+
+                $secret_key = sanitize_text_field($request['token']);
+
+
+                // Log the session token
+                // error_log('Received session token: ' . $secret_key);
+
+                // Check if session token is missing
+                if (empty($secret_key)) {
+                    // error_log('Missing session token.');
+                    // return new WP_REST_Response(array('message' => 'Missing session token.'), 400);
+                    return false;
+                }
+
+                // Retrieve session token from request body
+                error_log('Retrieved session token from request body: ' . $secret_key);
+
+                if (empty($secret_key)) {
+                    // error_log('Missing session token in request body.');
+                    // return new WP_REST_Response(array('message' => 'Missing session token in request body.'), 400);
+                    return false;
+                }
+
+                // Check if session token format is valid
+                if (strpos($secret_key, '|') === false) {
+                    // error_log('Invalid session token format: ' . $secret_key);
+                    // return new WP_REST_Response(array('message' => 'Invalid session token format.'), 400);
+                    return false;
+                }
+
+                // Split the session token into key, iv, and encrypted data
+                list($key, $iv, $encrypted_data) = explode('|', $secret_key);
+
+                // // Log the split values
+                // error_log('Key: ' . $key);
+                // error_log('IV: ' . $iv);
+                // error_log('Encrypted Data: ' . $encrypted_data);
+
+                try {
+                    // Decrypt the master password
+                    $master_password = $this->get_decrypt_data($key, $iv, $encrypted_data);
+                    // error_log('Master Password Decrypted.' . $master_password);
+
+                    // Check if decryption failed
+                    if ($master_password === false) {
+                        // error_log('Decryption failed.');
+                        // return new WP_REST_Response(array('message' => 'Decryption failed.'), 403);
+                        return false;
+                    }
+
+                    // Retrieve the stored hashed master password
+                    $hashed_master_password = get_user_meta($user_id, 'pm_hashed_master_password', true);
+                    // error_log('Hashed master password from user meta: ' . $hashed_master_password);
+
+                    // Verify the provided master password
+                    if (!PM_Helper::verify_password($master_password, $hashed_master_password)) {
+                        // error_log('Invalid master password.');
+                        // return new WP_REST_Response(array('message' => 'Invalid master password.'), 403);
+                        return false;
+                    }
+
+                    // If all checks pass, allow the request to proceed
+                    // error_log('Token validation successful. Request authorized.');
+                    return true;
+                } catch (Exception $e) {
+                    // error_log('Error during decryption: ' . $e->getMessage());
+                    // return new WP_REST_Response(array('message' => 'Error during decryption: ' . $e->getMessage()), 500);
+                    return false;
+                }
+            } else {
+                // return new WP_REST_Response(array('message' => 'User Not valid.'), 403);
+                return false;
+            }
         }
+    }
+
+
+
+
+
+    public function decrypt_data($encrypted_data, $key, $iv)
+    {
+        $decrypted_data = openssl_decrypt($encrypted_data, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+
+        if ($decrypted_data === false) {
+            return 'Decryption failed. Encrypted data: ' . bin2hex($encrypted_data) . ', Key: ' . bin2hex($key) . ', IV: ' . bin2hex($iv);
+        }
+
+        return $decrypted_data;
     }
 
 
@@ -206,31 +295,31 @@ class User_API
 
         // Retrieve the stored hashed master password, encrypted secret key, and salt
         $hashed_master_password = get_user_meta($user->ID, 'pm_hashed_master_password', true);
-        $encrypted_secret_key = get_user_meta($user->ID, 'pm_encrypted_secret_key', true);
-        $salt = get_user_meta($user->ID, 'pm_salt', true);
 
         // Verify the provided master password
         if (!PM_Helper::verify_password($master_password, $hashed_master_password)) {
             return new WP_REST_Response(array('message' => 'Invalid master password.'), 403);
         }
 
-        // Generate the encryption key from the master password and salt
-        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
-        error_log('Encryption key generated: ' . bin2hex($encryption_key)); // Debugging statement
-
-        // Decrypt the stored secret key using the derived encryption key
-        $decrypted_secret_key = PM_Helper::decrypt_data($encrypted_secret_key, $encryption_key);
-        error_log('Decrypted secret key: ' . $decrypted_secret_key); // Debugging statement
-
-        // If decryption failed, consider the login attempt as failed
-        if ($decrypted_secret_key === false) {
-            error_log('Decryption failed for user ID: ' . $user->ID); // Debugging statement
-            return new WP_REST_Response(array('message' => 'Invalid secret key or decryption failed.'), 403);
-        }
 
         // Generate a session token
         $session_token = PM_Helper::generate_session_token($user->ID);
 
+        
+        // // Generate the encryption key from the master password and salt
+        // $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
+        // error_log('Encryption key generated: ' . bin2hex($encryption_key)); // Debugging statement
+
+        // // Decrypt the stored secret key using the derived encryption key
+        // $decrypted_secret_key = PM_Helper::decrypt_data($encrypted_secret_key, $encryption_key);
+        // error_log('Decrypted secret key: ' . $decrypted_secret_key); // Debugging statement
+
+        // // If decryption failed, consider the login attempt as failed
+        // if ($decrypted_secret_key === false) {
+        //     error_log('Decryption failed for user ID: ' . $user->ID); // Debugging statement
+        //     return new WP_REST_Response(array('message' => 'Invalid secret key or decryption failed.'), 403);
+        // }
+        
         // Return the session token
         return new WP_REST_Response(array('message' => 'User logged in successfully.', 'token' => $session_token), 200);
     }
@@ -313,7 +402,9 @@ class User_API
     }
 
 
-
+    /**
+     * Handle user logout.
+     */
     public function logout_user($request)
     {
         $headers = getallheaders();
@@ -327,6 +418,39 @@ class User_API
             }
         }
         return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
+    }
+
+    /**
+     * Convert base64 to bytes.
+     */
+    private function base64_to_bytes($base64)
+    {
+        return base64_decode($base64);
+    }
+
+    /**
+     * Decrypt data using AES-256-CBC.
+     */
+    public function get_decrypt_data($key, $iv, $encrypted_data)
+    {
+        $key_bytes = hex2bin($key); // Convert hex key to bytes
+        $iv_bytes = $this->base64_to_bytes($iv); // Convert base64 IV to bytes
+        $encrypted_data_bytes = $this->base64_to_bytes($encrypted_data); // Convert base64 encrypted data to bytes
+
+        // Decrypt the data
+        $decrypted_data = openssl_decrypt(
+            $encrypted_data_bytes,
+            'aes-256-cbc',
+            $key_bytes,
+            OPENSSL_RAW_DATA,
+            $iv_bytes
+        );
+
+        if ($decrypted_data === false) {
+            throw new Exception('Decryption failed');
+        }
+
+        return $decrypted_data;
     }
 }
 

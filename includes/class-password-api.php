@@ -6,6 +6,9 @@ if (!defined('ABSPATH')) {
 
 class Password_API
 {
+
+    private $master_password;
+
     public function __construct()
     {
         add_action('rest_api_init', array($this, 'register_api_routes'));
@@ -52,24 +55,134 @@ class Password_API
         register_rest_route('password-manager/v1', '/search-passwords', array(
             'methods' => 'GET',
             'callback' => array($this, 'search_passwords'),
-            'permission_callback' => array($this, 'handle_token_validation')
         ));
     }
 
-    
+
     public function handle_token_validation($request)
     {
-        if (PM_Helper::validate_token($request)) {
-            // Token is valid
-            return true;
-        } else {
-            // Token is invalid or expired
-            return new WP_Error('rest_forbidden', 'Invalid or expired session token.', array('status' => 403));
+
+        $headers = getallheaders();
+        if (isset($headers['X-Session-Token'])) {
+            $session_token = sanitize_text_field($headers['X-Session-Token']);
+            $user_id = PM_Helper::get_user_id_from_token($session_token);
+            if ($user_id) {
+                // Retrieve the 'x-session-token' header
+                $headers = $request->get_header('X-Session-Token');
+
+                $secret_key = sanitize_text_field($request['token']);
+
+
+                // Log the session token
+                // error_log('Received session token: ' . $secret_key);
+
+                // Check if session token is missing
+                if (empty($secret_key)) {
+                    // error_log('Missing session token.');
+                    // return new WP_REST_Response(array('message' => 'Missing session token.'), 400);
+                    return false;
+                }
+
+                // Retrieve session token from request body
+                error_log('Retrieved session token from request body: ' . $secret_key);
+
+                if (empty($secret_key)) {
+                    // error_log('Missing session token in request body.');
+                    // return new WP_REST_Response(array('message' => 'Missing session token in request body.'), 400);
+                    return false;
+                }
+
+                // Check if session token format is valid
+                if (strpos($secret_key, '|') === false) {
+                    // error_log('Invalid session token format: ' . $secret_key);
+                    // return new WP_REST_Response(array('message' => 'Invalid session token format.'), 400);
+                    return false;
+                }
+
+                // Split the session token into key, iv, and encrypted data
+                list($key, $iv, $encrypted_data) = explode('|', $secret_key);
+
+                // // Log the split values
+                // error_log('Key: ' . $key);
+                // error_log('IV: ' . $iv);
+                // error_log('Encrypted Data: ' . $encrypted_data);
+
+                try {
+                    // Decrypt the master password
+                    $master_password = $this->get_decrypt_data($key, $iv, $encrypted_data);
+                    // error_log('Master Password Decrypted.' . $master_password);
+
+                    // Check if decryption failed
+                    if ($master_password === false) {
+                        // error_log('Decryption failed.');
+                        // return new WP_REST_Response(array('message' => 'Decryption failed.'), 403);
+                        return false;
+                    }
+
+                    // Retrieve the stored hashed master password
+                    $hashed_master_password = get_user_meta($user_id, 'pm_hashed_master_password', true);
+                    // error_log('Hashed master password from user meta: ' . $hashed_master_password);
+
+                    // Verify the provided master password
+                    if (!PM_Helper::verify_password($master_password, $hashed_master_password)) {
+                        // error_log('Invalid master password.');
+                        // return new WP_REST_Response(array('message' => 'Invalid master password.'), 403);
+                        return false;
+                    }
+
+                    // If all checks pass, allow the request to proceed
+                    // error_log('Token validation successful. Request authorized.');
+                    $this->master_password = $master_password;
+                    return true;
+                } catch (Exception $e) {
+                    // error_log('Error during decryption: ' . $e->getMessage());
+                    // return new WP_REST_Response(array('message' => 'Error during decryption: ' . $e->getMessage()), 500);
+                    return false;
+                }
+            } else {
+                // return new WP_REST_Response(array('message' => 'User Not valid.'), 403);
+                return false;
+            }
         }
+    }
+
+    /**
+     * Convert base64 to bytes.
+     */
+    private function base64_to_bytes($base64)
+    {
+        return base64_decode($base64);
+    }
+
+    /**
+     * Decrypt data using AES-256-CBC.
+     */
+    public function get_decrypt_data($key, $iv, $encrypted_data)
+    {
+        $key_bytes = hex2bin($key); // Convert hex key to bytes
+        $iv_bytes = $this->base64_to_bytes($iv); // Convert base64 IV to bytes
+        $encrypted_data_bytes = $this->base64_to_bytes($encrypted_data); // Convert base64 encrypted data to bytes
+
+        // Decrypt the data
+        $decrypted_data = openssl_decrypt(
+            $encrypted_data_bytes,
+            'aes-256-cbc',
+            $key_bytes,
+            OPENSSL_RAW_DATA,
+            $iv_bytes
+        );
+
+        if ($decrypted_data === false) {
+            throw new Exception('Decryption failed');
+        }
+
+        return $decrypted_data;
     }
 
     public function add_password($request)
     {
+        error_log('Your adding password now');
+
         $headers = getallheaders();
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
@@ -79,9 +192,11 @@ class Password_API
         }
 
         // Retrieve and decrypt the secret key
-        $encrypted_secret_key = get_user_meta($user_id, 'pm_encrypted_secret_key', true);
+
         $salt = get_user_meta($user_id, 'pm_salt', true);
-        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
+        $master_password =  $this->master_password;
+        error_log('Global Masster Password' . $this->master_password);
+
 
         // Generate the encryption key from the master password and salt
         $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
@@ -105,9 +220,7 @@ class Password_API
 
         // Check if the username and URL already exist for this user
         $existing_entry = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table_name WHERE user_id = %d AND username = %s AND url = %s",
-            $user_id,
-            $username,
+            "SELECT * FROM $table_name WHERE url = %s",
             $url
         ));
 
@@ -140,7 +253,7 @@ class Password_API
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
         $password_id = $request['id'];
-        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
+        $master_password = $this->master_password; // Need to get this from the user
 
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
@@ -208,7 +321,7 @@ class Password_API
         $headers = getallheaders();
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
-        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
+        $master_password = $this->master_password; // Need to get this from the user
 
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
@@ -227,6 +340,7 @@ class Password_API
         $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE user_id = %d", $user_id), ARRAY_A);
 
         foreach ($results as &$result) {
+
             $result['username'] = PM_Helper::decrypt_data($result['username'], $encryption_key);
             $result['password'] = PM_Helper::decrypt_data($result['password'], $encryption_key);
             $result['note'] = PM_Helper::decrypt_data($result['note'], $encryption_key);
@@ -282,7 +396,7 @@ class Password_API
         $session_token = isset($headers['X-Session-Token']) ? sanitize_text_field($headers['X-Session-Token']) : '';
         $user_id = PM_Helper::get_user_id_from_token($session_token);
         $password_id = $request['id'];
-        $master_password = sanitize_text_field($request['master_password']); // Need to get this from the user
+        $master_password = $this->master_password; // Need to get this from the user
 
         if (!$user_id) {
             return new WP_REST_Response(array('message' => 'Invalid session token. Please login.'), 403);
@@ -344,16 +458,21 @@ class Password_API
         global $wpdb;
         $table_name = $wpdb->prefix . 'password_manager';
 
+        // Assuming $user_id is retrieved from session token validation and $search_term is sanitized.
+        $search_term = sanitize_text_field($request->get_param('search_term')); // Replace 'search_term' with the actual parameter name if different
         // Search using the provided URL or string
         $like_url = '%' . $wpdb->esc_like($search_term) . '%';
         $exact_url = $wpdb->esc_like($search_term); // Escape for safe comparison
-        $query = "SELECT * FROM $table_name WHERE user_id = %d AND (url LIKE %s OR url = %s)";
+
+        // Modified query to include user_id
+        $query = "SELECT url, username, password, note FROM $table_name WHERE user_id = %d AND (url LIKE %s OR url = %s)";
         $query_params = array($user_id, $like_url, $exact_url);
 
         $results = $wpdb->get_results($wpdb->prepare($query, $query_params), ARRAY_A);
 
-        // Decrypt the results
+        // Make sure to decrypt the retrieved data if needed
         foreach ($results as &$result) {
+            // Assuming you have methods to decrypt data
             $result['username'] = PM_Helper::decrypt_data($result['username'], $encryption_key);
             $result['password'] = PM_Helper::decrypt_data($result['password'], $encryption_key);
             $result['note'] = PM_Helper::decrypt_data($result['note'], $encryption_key);
