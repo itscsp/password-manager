@@ -18,7 +18,7 @@ const router = createBrowserRouter([
                 element: <HomePage />,
             },
             {
-                path: "/register",
+                path: "/signup",
                 element: <RegisterPage />,
             },
             {
@@ -26,7 +26,7 @@ const router = createBrowserRouter([
                 element: <LoginPage />,
             },
             {
-                path: "/generate",
+                path: "/generate-password",
                 element: <GeneratePass />,
             },
             {

@@ -1,15 +1,13 @@
 import { Outlet } from "react-router-dom"
-
+import Footer from "../components/Footer"
+import Header from "../components/Header"
 const RootLayout = () => {
     return (
         <main>
+            <Header />
             <Outlet />
-            <footer className="fixed bottom-0 left-0 w-full text-center py-4 bg-black text-white">
-                Designed And Built By <a className="text-red">Chethan S Poojary</a>
-            </footer>
+            <Footer />
         </main>
-
-
     )
 }
 

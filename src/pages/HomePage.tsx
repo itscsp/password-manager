@@ -1,26 +1,38 @@
-import React from 'react'
+import React from 'react';
+import Button from '../components/Button';
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
     return (
-
         <div className="container">
+                <div className="bg-[#181818] p-6 rounded-lg shadow-lg">
+            <div className="flex flex-col items-center justify-center h-full w-96">
+                    {/* Login Button */}
+                    <Button
+                        text="Login"
+                        url="/login"
+                        variation="primary"
+                        size="block"
+                    />
 
-            <div class="flex flex-col items-center justify-center h-full">
-                <div class="bg-[#181818] p-6 rounded-lg shadow-lg">
-                    <button class="bg-[#D71340] text-white font-bold py-2 px-4 rounded w-full mb-4 hover:bg-[#ff4a6e]">
-                        Login
-                    </button>
-                    <button class="bg-transparent text-[#D71340] font-bold py-2 px-4 rounded w-full mb-4 border-2 border-[#D71340] hover:bg-[#ff4a6e] hover:text-white">
-                        Create An Account
-                    </button>
-                    <button class="bg-[#D71340] text-white font-bold py-2 px-4 rounded w-full hover:bg-[#ff4a6e]">
-                        Generate Password
-                    </button>
+                    {/* Create An Account Button */}
+                    <Button
+                        text="Create An Account"
+                        url="/signup"
+                        variation="secondary"
+                        size="block"
+                    />
+
+                    {/* Generate Password Button */}
+                    <Button
+                        text="Generate Password"
+                        url="/generate-password"
+                        variation="primary"
+                        size="block"
+                    />
                 </div>
             </div>
-
         </div>
-    )
+    );
 }
 
-export default HomePage
+export default HomePage;
