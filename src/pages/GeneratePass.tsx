@@ -59,7 +59,6 @@ const GeneratePass: React.FC = () => {
 
         let generatedPassword = '';
         for (let i = 0; i < length; i++) {
-            debugger
             const randomIndex = Math.floor(Math.random() * availableChars.length);
             generatedPassword += availableChars[randomIndex];
         }
