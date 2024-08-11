@@ -49,7 +49,7 @@ const GeneratePass: React.FC = () => {
         const upperChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const lowerChars = 'abcdefghijklmnopqrstuvwxyz';
         const numberChars = '0123456789';
-        const symbolChars = '!@#$%^&*()_+[]{}<>?,./';
+        const symbolChars = '!@$%^()_+?,/';
 
         let availableChars = '';
         if (uppercase) availableChars += upperChars;
@@ -59,6 +59,7 @@ const GeneratePass: React.FC = () => {
 
         let generatedPassword = '';
         for (let i = 0; i < length; i++) {
+            debugger
             const randomIndex = Math.floor(Math.random() * availableChars.length);
             generatedPassword += availableChars[randomIndex];
         }
@@ -98,9 +99,9 @@ const GeneratePass: React.FC = () => {
         <div className="continer flex items-center justify-center px-4">
             <div className="p-6 bg-black rounded-lg shadow-lg text-white max-w-lg w-full">
                 <h1 className="text-2xl font-bold mb-4 text-center">Generate A Secured Password<br />With The <span className="text-red font-saira">OnePass</span></h1>
-                <div className="bg-gray-900 p-2 rounded-lg mb-4">
-                    <p className="text-xl font-mono text-center">{password || "***************"}</p>
-                    <div className="h-1 mt-2 rounded-full overflow-hidden bg-gray-700">
+                <div className="bg-gray-900 rounded-tl-lg rounded-tr-lg mb-4">
+                    <p className="text-xl font-mono text-center p-4">{password || "***************"}</p>
+                    <div className="h-1 mt-2  overflow-hidden bg-gray-700">
                         <div className={clsx('h-full', getStrengthBarColor())} style={{ width: `${(strength / 7) * 100}%` }}></div>
                     </div>
                 </div>
@@ -120,7 +121,7 @@ const GeneratePass: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <div className="mb-4 grid grid-cols-2 gap-4 mb-10">
+                <div className="mb-4 grid grid-cols-2 gap-4 mb-14">
                     {Object.keys(options).map((option) => (
                         <label key={option} className="flex items-center cursor-pointer">
                             <input
@@ -144,14 +145,14 @@ const GeneratePass: React.FC = () => {
                         onClick={generatePassword}  // Pass the click event handler
                     />
                     <Button
-                        text= {coped ? "Coped" : "Copy"}
+                        text={coped ? "Coped" : "Copy"}
                         url="#"
                         variation="secondary"  // or 'secondary' depending on your style needs
                         size="block"        // or 'block' depending on your layout
-                        onClick={password ? handleCopy : generatePassword }  // Pass the click event handler
-                        
+                        onClick={password ? handleCopy : generatePassword}  // Pass the click event handler
+
                     />
-                        
+
                 </div>
                 {errorMessage && (
                     <p className="text-red text-sm mt-2">{errorMessage}</p>

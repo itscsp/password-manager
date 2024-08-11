@@ -8,9 +8,16 @@ body {
   font-family: "inter";
 }
 
+@media (min-width:375px){
+  #root{
+    min-width: 375px;
+    width: 75%;
+  }
+}
+
 #root{
-  min-width: 375px;
-  width: 75%;
+  min-width: 300px;
+  width: 100%;
 }
 
 .back-btn{
