@@ -1,19 +1,50 @@
-# *|OnePass
+# React + TypeScript + Vite
 
-### Contributors: itscsp
-[chethanspoojary.com](https://chethanspoojary.com)
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Description
-Password Manager wordpress plugin let you to store different passwords at onc place.
+Currently, two official plugins are available:
 
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Flow Chart
-- [Flow chart with logic explained ](https://drive.google.com/file/d/1EItJ-AKWl6XMJ_txb69lvWmE9cUgUKwr/view?usp=sharing)
+## Expanding the ESLint configuration
 
-## Project Logs and documentions
- - [Check my notion](https://www.notion.so/One-Pass-Password-Manager-1a8c3214865d4ae99302a98efb4f6361?pvs=4)
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
+- Configure the top-level `parserOptions` property like this:
 
-## API Testing | Postman
-- [Link to postman](https://web.postman.co/workspace/My-Workspace~5196b077-ea9a-496f-8ed5-9775ecaa1f8e/folder/25361199-996d64d6-5f00-465b-b07c-003e9d081aa1)
- 
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
+
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
+
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
+```
