@@ -1,8 +1,26 @@
 body {
-  background-color: #000;
+  background-color: #121212;
   color: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  font-family: "inter";
+}
+
+#root{
+  min-width: 375px;
+  width: 75%;
+}
+
+.back-btn{
+  padding: 20px;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+* {
+  /* setting the checkbox input HTML element accent color to `green` */
+  accent-color: #D71340;
 }

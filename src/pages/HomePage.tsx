@@ -4,8 +4,8 @@ import Button from '../components/Button';
 const HomePage: React.FC = () => {
     return (
         <div className="container">
-                <div className="bg-[#181818] p-6 rounded-lg shadow-lg">
-            <div className="flex flex-col items-center justify-center h-full w-96">
+            <div className="shadow-lg ">
+                <div className="bg-black rounded-lg  p-6  flex flex-col items-center justify-center h-full w-96 m-auto">
                     {/* Login Button */}
                     <Button
                         text="Login"
