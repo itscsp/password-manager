@@ -1,4 +1,4 @@
-import React from 'react'
+
 import logo from "../assets/onepass_logo.svg"
 import { Link, useNavigate } from 'react-router-dom'
 
