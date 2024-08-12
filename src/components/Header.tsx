@@ -1,5 +1,4 @@
 
-import logo from "../assets/onepass_logo.svg"
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const Header = () => {
