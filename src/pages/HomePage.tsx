@@ -5,7 +5,7 @@ const HomePage: React.FC = () => {
     return (
         <div className="container">
             <div className="shadow-lg ">
-                <div className="bg-black rounded-lg  p-6  flex flex-col items-center justify-center h-full w-96 m-auto">
+                <div className="bg-black rounded-lg  p-6  flex flex-col items-center justify-center h-full md:w-96 w-full m-auto">
                     {/* Login Button */}
                     <Button
                         text="Login"

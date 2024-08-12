@@ -17,24 +17,7 @@ const GeneratePass: React.FC = () => {
         symbols: true,
     });
 
-    const calculateStrength = (password: string) => {
-        let score = 0;
-
-        if (/[A-Z]/.test(password)) score += 1;
-        if (/[a-z]/.test(password)) score += 1;
-        if (/[0-9]/.test(password)) score += 1;
-        if (/[^A-Za-z0-9]/.test(password)) score += 1;
-        if (password.length >= 8) score += 1;
-        if (password.length >= 12) score += 1;
-        if (password.length >= 16) score += 1;
-
-        setStrength(score);
-    };
-
-    const isAnyOptionSelected = () => {
-        return Object.values(options).some(option => option);
-    };
-
+    
     const generatePassword = () => {
         if (!isAnyOptionSelected()) {
             setPassword("");
@@ -59,13 +42,30 @@ const GeneratePass: React.FC = () => {
 
         let generatedPassword = '';
         for (let i = 0; i < length; i++) {
-            debugger
             const randomIndex = Math.floor(Math.random() * availableChars.length);
             generatedPassword += availableChars[randomIndex];
         }
 
         setPassword(generatedPassword);
         calculateStrength(generatedPassword);
+    };
+
+    const calculateStrength = (password: string) => {
+        let score = 0;
+
+        if (/[A-Z]/.test(password)) score += 1;
+        if (/[a-z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 1;
+        if (/[^A-Za-z0-9]/.test(password)) score += 1;
+        if (password.length >= 8) score += 1;
+        if (password.length >= 12) score += 1;
+        if (password.length >= 16) score += 1;
+
+        setStrength(score);
+    };
+
+    const isAnyOptionSelected = () => {
+        return Object.values(options).some(option => option);
     };
 
     const handleCopy = () => {
@@ -145,7 +145,7 @@ const GeneratePass: React.FC = () => {
                         onClick={generatePassword}  // Pass the click event handler
                     />
                     <Button
-                        text={coped ? "Coped" : "Copy"}
+                        text={coped ? "Copied" : "Copy"}
                         url="#"
                         variation="secondary"  // or 'secondary' depending on your style needs
                         size="block"        // or 'block' depending on your layout
