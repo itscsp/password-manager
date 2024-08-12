@@ -1,33 +1,42 @@
 body {
   background-color: #121212;
   color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
   font-family: "inter";
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-@media (min-width:375px){
-  #root{
+.mainLayout{
+  min-height: calc(100vh - 104px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (min-width: 375px) {
+  #root {
     min-width: 375px;
     width: 75%;
   }
 }
 
-#root{
+#root {
   min-width: 300px;
   width: 100%;
 }
 
-.back-btn{
+.back-btn {
   padding: 20px;
-  position: absolute;
-  top: 0;
-  left: 0;
+}
+
+button.back-btn.home-btn {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 * {
   /* setting the checkbox input HTML element accent color to `green` */
-  accent-color: #D71340;
+  accent-color: #d71340;
 }
