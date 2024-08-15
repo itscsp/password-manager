@@ -98,9 +98,9 @@ const GeneratePass: React.FC = () => {
     return (
         <div className="continer flex items-center justify-center px-4">
             <div className="p-6 bg-black rounded-lg shadow-lg text-white max-w-lg w-full">
-                <h1 className="text-2xl font-bold mb-4 text-center">Generate A Secured Password<br />With The <span className="text-red font-saira">OnePass</span></h1>
+                <h1 className="text-2xl font-bold mb-8 text-center"><span className="text-red font-saira">OnePass</span> Password Generator</h1>
                 <div className="bg-gray-900 rounded-tl-lg rounded-tr-lg mb-4">
-                    <p className="text-xl font-mono text-center p-4">{password || "***************"}</p>
+                    <p className="text-xl font-mono text-center p-4 pb-2">{password || "***************"}</p>
                     <div className="h-1 mt-2  overflow-hidden bg-gray-700">
                         <div className={clsx('h-full', getStrengthBarColor())} style={{ width: `${(strength / 7) * 100}%` }}></div>
                     </div>
@@ -109,7 +109,7 @@ const GeneratePass: React.FC = () => {
                     <label className="block text-lg mb-6">Customize Your Password</label>
                     <div className='flex flex-col gap-4'>
                         <div className='flex gap-5'>
-                            <div className="text-center mt-2 py-2 px-4 text-2xl bg-gray-500 rounded">{length}</div>
+                            <div className="text-center mt-2 py-2 px-4 text-2xl bg-[#121212] rounded">{length}</div>
                             <input
                                 type="range"
                                 min="8"
@@ -121,19 +121,22 @@ const GeneratePass: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <div className="mb-4 grid grid-cols-2 gap-4 mb-14">
+                <div className="grid grid-cols-2 gap-4 mt-8 mb-8 px-4 py-7 bg-[#121212] rounded-xl">
                     {Object.keys(options).map((option) => (
-                        <label key={option} className="flex items-center cursor-pointer">
+                        <div>
                             <input
                                 type="checkbox"
+                                id={`op-pg_${option}`}
                                 checked={options[option as keyof typeof options]}
                                 onChange={() =>
                                     setOptions({ ...options, [option]: !options[option as keyof typeof options] })
                                 }
-                                className="form-checkbox h-5 w-5 text-red-500 "
+                                className="hidden op-checkbox__input"
                             />
+                        <label key={option} htmlFor={`op-pg_${option}`} className="flex items-center cursor-pointer p-3">
                             <span className="ml-2 uppercase font-inter">{option}</span>
                         </label>
+                        </div>
                     ))}
                 </div>
                 <div className="flex gap-4">

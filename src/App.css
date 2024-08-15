@@ -8,7 +8,7 @@ body {
   justify-content: space-between;
 }
 
-.mainLayout{
+.mainLayout {
   min-height: calc(100vh - 104px);
   display: flex;
   flex-direction: column;
@@ -25,6 +25,10 @@ body {
 #root {
   min-width: 300px;
   width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .back-btn {
@@ -39,4 +43,43 @@ button.back-btn.home-btn {
 * {
   /* setting the checkbox input HTML element accent color to `green` */
   accent-color: #d71340;
+}
+
+.op-checkbox__input + label{
+  position: relative;
+}
+
+
+.op-checkbox__input + label::before {
+  background-color: rgb(0, 0, 0);
+  border: 1.5px solid #d71340;
+  box-shadow: inset 0 1px 2px 0 rgba(255, 255, 255, 0);
+  border-radius: 4px;
+  content: "";
+  height: 30px;
+  left: 0;
+  position: absolute;
+  top: 50%;
+  width: 30px;
+  transform: translate(0px, -50%);
+}
+
+.op-checkbox__input + label::after {
+  background:none;
+}
+
+.op-checkbox__input:checked+label::after {
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none"><g clip-path="url(%23clip0_460_68)"><path d="M5.43433 14.0427L0.234328 8.74038C-0.0780787 8.42183 -0.0780787 7.90533 0.234328 7.58674L1.36567 6.43311C1.67808 6.11452 2.18464 6.11452 2.49705 6.43311L6.00002 10.005L13.503 2.35439C13.8154 2.03584 14.322 2.03584 14.6344 2.35439L15.7657 3.50803C16.0781 3.82659 16.0781 4.34308 15.7657 4.66167L6.5657 14.0427C6.25327 14.3613 5.74673 14.3613 5.43433 14.0427Z" fill="%23D71340"/></g><defs><clipPath id="clip0_460_68"><rect width="16" height="16.3148" fill="white" transform="translate(0 0.0411377)"/></clipPath></defs></svg>');
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 7.5px;
+  width: 16px;
+  height: 17px;
+  background-repeat: no-repeat;
+  transform: translate(0, -50%);
+}
+
+.op-checkbox__input+label span {
+  margin-left: 40px;
 }
