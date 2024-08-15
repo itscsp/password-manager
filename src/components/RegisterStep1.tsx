@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, isValidElement, useState } from "react"
+import { ChangeEvent, FormEvent, useState } from "react"
 
 interface formState {
   email: string,
@@ -6,7 +6,11 @@ interface formState {
   message: string,
 }
 
-const RegisterStep1: React.FC = () => {
+interface RegisterStep1Props {
+  nextStep: React.Dispatch<React.SetStateAction<1 | 2>>;
+}
+
+const RegisterStep1: React.FC<RegisterStep1Props> = ({nextStep}) => {
   const [message, setMessage] = useState("");
   const [formState, setFormState] = useState<formState>({
     email: "",
@@ -41,6 +45,7 @@ const RegisterStep1: React.FC = () => {
         message: "Enter valid email address.",
       }));
     } else {
+      nextStep(2);
       setMessage("You will get email")
     }
 
