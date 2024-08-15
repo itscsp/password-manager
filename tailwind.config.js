@@ -11,8 +11,9 @@ export default {
       },
       colors: {
         black: "#000000", // Custom name for the color
-        red: "#D71340",
-        redHover: "rgb(138 10 39)",
+        opred: "#D71340",
+        opredHover: "rgb(138 10 39)",
+        opblack400: "#121212"
       },
       container: {
         center: true, // Center the container by default

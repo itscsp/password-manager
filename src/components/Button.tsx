@@ -2,27 +2,27 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 interface ButtonProps {
-    text: string;
-    url: string;
-    variation?: 'primary' | 'secondary';
-    size?: 'inline' | 'block';
-    onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
-  }
+  text: string;
+  url: string;
+  variation?: 'primary' | 'secondary';
+  size?: 'inline' | 'block';
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
+}
 
 const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size = 'inline', onClick }) => {
   // Define the base styles
-  const baseStyle = "text-white text-base py-2 px-4 rounded mb-4 transition-colors duration-300";
-  
+  const baseStyle = "text-white text-base p-4 rounded mb-4 transition-colors duration-300";
+
   // Define the variation styles
   const variations = {
-    primary: "bg-red hover:bg-redHover ",
-    secondary: "bg-transparent text-red border border-red hover:border-redHover hover:bg-redHover hover:text-white ",
+    primary: "bg-opred hover:bg-opredHover ",
+    secondary: "bg-transparent text-opred border border-opred hover:border-opredHover hover:bg-opredHover hover:text-white ",
   };
 
   // Define the size styles
   const sizes = {
-    inline: "py-3 px-6 text-center inline-block",
-    block: "py-3 px-6 w-full text-center block",
+    inline: "p-4 text-center inline-block",
+    block: "w-full text-center block",
   };
 
   // Combine the styles

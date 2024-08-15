@@ -49,11 +49,9 @@ button.back-btn.home-btn {
   position: relative;
 }
 
-@media (max-width:600px) {
-  .op-checkbox__input + label{
-    font-size: 12px;
-  }
-  
+input:focus {
+  outline: none;
+  background-color: transparent;
 }
 
 
