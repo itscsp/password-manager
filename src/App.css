@@ -49,6 +49,13 @@ button.back-btn.home-btn {
   position: relative;
 }
 
+@media (max-width:600px) {
+  .op-checkbox__input + label{
+    font-size: 12px;
+  }
+  
+}
+
 
 .op-checkbox__input + label::before {
   background-color: rgb(0, 0, 0);
@@ -81,5 +88,5 @@ button.back-btn.home-btn {
 }
 
 .op-checkbox__input+label span {
-  margin-left: 40px;
+  margin-left: 30px;
 }

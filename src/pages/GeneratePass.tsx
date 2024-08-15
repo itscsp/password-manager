@@ -97,7 +97,7 @@ const GeneratePass: React.FC = () => {
 
     return (
         <div className="continer flex items-center justify-center px-4">
-            <div className="p-6 bg-black rounded-lg shadow-lg text-white max-w-lg w-full">
+            <div className="md:p-6 py-6 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full">
                 <h1 className="text-2xl font-bold mb-8 text-center"><span className="text-red font-saira">OnePass</span> Password Generator</h1>
                 <div className="bg-gray-900 rounded-tl-lg rounded-tr-lg mb-4">
                     <p className="text-xl font-mono text-center p-4 pb-2">{password || "***************"}</p>
@@ -121,7 +121,7 @@ const GeneratePass: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-8 mb-8 px-4 py-7 bg-[#121212] rounded-xl">
+                <div className="grid grid-cols-2 md:gap-4 gap-x-2 gap-y-4 mt-8 mb-8 px-4 py-7 bg-[#121212] rounded-xl">
                     {Object.keys(options).map((option) => (
                         <div>
                             <input
