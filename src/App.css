@@ -2,7 +2,15 @@ body {
   background-color: #121212;
   color: #fff;
   font-family: "inter";
-  min-height: 100vh;
+
+}
+
+.app-continer {
+  max-width: 750px;
+  width: 100%;
+  padding-inline: 15px;
+  margin: auto;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -32,7 +40,7 @@ body {
 }
 
 .back-btn {
-  padding: 20px;
+  padding: 0px;
 }
 
 button.back-btn.home-btn {

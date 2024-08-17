@@ -35,4 +35,4 @@ const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size 
   );
 };
 
-export default Button;
+export {Button};

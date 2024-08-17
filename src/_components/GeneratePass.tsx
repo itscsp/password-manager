@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import Button from '../components/Button';
+import { Button } from "./"
 
 const GeneratePass: React.FC = () => {
     const [password, setPassword] = useState('');
@@ -17,7 +17,7 @@ const GeneratePass: React.FC = () => {
         symbols: true,
     });
 
-    
+
     const generatePassword = () => {
         if (!isAnyOptionSelected()) {
             setPassword("");
@@ -98,7 +98,7 @@ const GeneratePass: React.FC = () => {
     return (
         <div className="continer flex items-center justify-center px-4">
             <div className="md:p-6 py-6 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full">
-                <h1 className="text-2xl font-bold mb-8 text-center"><span className="text-red font-saira">OnePass</span> Password Generator</h1>
+                <h1 className="text-2xl font-bold mb-8 text-center"><span className="text-opred font-saira">OnePass</span> Password Generator</h1>
                 <div className="bg-gray-900 rounded-tl-lg rounded-tr-lg mb-4">
                     <p className="text-xl font-mono text-center p-4 pb-2">{password || "***************"}</p>
                     <div className="h-1 mt-2  overflow-hidden bg-gray-700">
@@ -133,9 +133,9 @@ const GeneratePass: React.FC = () => {
                                 }
                                 className="hidden op-checkbox__input"
                             />
-                        <label key={option} htmlFor={`op-pg_${option}`} className="flex items-center cursor-pointer p-3">
-                            <span className="ml-2 uppercase font-inter">{option}</span>
-                        </label>
+                            <label key={option} htmlFor={`op-pg_${option}`} className="flex items-center cursor-pointer p-3">
+                                <span className="ml-2 uppercase font-inter">{option}</span>
+                            </label>
                         </div>
                     ))}
                 </div>
@@ -165,4 +165,4 @@ const GeneratePass: React.FC = () => {
     );
 }
 
-export default GeneratePass;
+export { GeneratePass };
