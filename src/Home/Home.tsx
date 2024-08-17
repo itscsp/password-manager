@@ -7,7 +7,7 @@ function Home() {
 
   return (
     <div className="shadow-lg ">
-      <div className="bg-black rounded-lg  p-6  flex flex-col items-center justify-center h-full md:w-96 w-full m-auto">
+      <div className="bg-black rounded-lg  p-6  flex flex-col items-center justify-center h-full sm:w-96 w-full m-auto">
         {!auth &&
           <>
             {/* Login Button */}
