@@ -6,6 +6,7 @@ import './App.css';
 import { Routes, Route } from 'react-router-dom';
 
 const App: React.FC = () => {
+  
   return (
     <div className="app-container bg-opblack400 gap-5">
       <Nav />

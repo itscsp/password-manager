@@ -123,7 +123,7 @@ const GeneratePass: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 md:gap-4 gap-x-2 gap-y-4 mt-8 mb-8 px-4 py-7 bg-[#121212] rounded-xl">
                     {Object.keys(options).map((option) => (
-                        <div>
+                        <div key={option}>
                             <input
                                 type="checkbox"
                                 id={`op-pg_${option}`}
