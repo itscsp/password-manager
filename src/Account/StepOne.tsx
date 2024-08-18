@@ -23,7 +23,7 @@ const StepOne: React.FC<StepOneProps> = ({ formData, errors, onChange, onNext, c
                     disabled={currentStep !== 1}
 
                 />
-                {errors.email && <p>{errors.email}</p>}
+                {errors.email && <p className='mt-2 px-4'>{errors.email}</p>}
             </div>
             {currentStep === 1 &&
 

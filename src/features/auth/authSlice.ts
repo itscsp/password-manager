@@ -1,77 +1,233 @@
-import {
-  User,
-  AuthState,
-  LoginCredentials,
-  RegisterData,
-  AuthResponse,
-} from "./authTypes";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+interface AuthState {
+  loading: boolean;
+  error: string | null;
+  isLoggedIn: boolean;
+  username: string | null;
+  firstName: string | null;
+  token: string | null;
+  sessionToken: string | null;
+  isEmailVerified?: boolean;
+}
 
-// Initial State
 const initialState: AuthState = {
-  user: null,
-  token: null,
   loading: false,
   error: null,
+  isLoggedIn: false,
+  username: null,
+  firstName: null,
+  token: null,
+  sessionToken:null,
+  isEmailVerified: false,
 };
 
-// Async Thunks
-export const login = createAsyncThunk<AuthResponse, LoginCredentials>(
+// Async thunk to handle login
+export const login = createAsyncThunk(
   "auth/login",
-  async (credentials) => {
-    const response = await apiClient.post("/auth/login", credentials);
-    return response.data;
+  async (
+    {
+      username,
+      master_password,
+    }: { username: string; master_password: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await axios.post(
+        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/login",
+        { username, master_password }
+      );
+      const { message, username: user, first_name, token } = response.data;
+      return { user, first_name, token };
+    } catch (error: any) {
+      return rejectWithValue("Failed to login");
+    }
   }
 );
 
-export const register = createAsyncThunk<AuthResponse, RegisterData>(
-  "auth/register",
-  async (userData) => {
-    const response = await apiClient.post("/auth/register", userData);
-    return response.data;
+// Async thunk to start registration (send email)
+export const startRegistration = createAsyncThunk(
+  "auth/startRegistration",
+  async (email: string, { rejectWithValue }) => {
+    try {
+      await axios.post(
+        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/start-registration",
+        { email }
+      );
+      return "Verification email sent";
+    } catch (error: any) {
+      return rejectWithValue("Failed to send verification email");
+    }
   }
 );
 
-// Auth Slice
+// Async thunk to verify email token
+export const verifyEmailToken = createAsyncThunk(
+  "auth/verifyEmailToken",
+  async (
+    { email, token }: { email: string; token: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      await axios.get(
+        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/verify-email",
+        { params: { email, token } }
+      );
+      return "Email verified";
+    } catch (error: any) {
+      return rejectWithValue("Invalid verification token");
+    }
+  }
+);
+
+// Async thunk to complete registration
+export const completeRegistration = createAsyncThunk(
+  "auth/completeRegistration",
+  async (
+    {
+      email,
+      token,
+      name,
+      master_password,
+      confirm_master_password,
+    }: {
+      email: string;
+      token: string;
+      name: string;
+      master_password: string;
+      confirm_master_password: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      await axios.post(
+        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/complete-registration",
+        { email, token, name, master_password, confirm_master_password }
+      );
+      return "Registration completed";
+    } catch (error: any) {
+      return rejectWithValue("Failed to complete registration");
+    }
+  }
+);
+
+// Async thunk to restore session
+export const restoreSession = createAsyncThunk(
+  "auth/restoreSession",
+  async (
+    userData: { username: string; firstName: string; token: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      // Optionally, you can validate or refresh the session here
+      return userData;
+    } catch (error: any) {
+      return rejectWithValue("Failed to restore session");
+    }
+  }
+);
+
+// Async thunk to handle logout
+export const logout = createAsyncThunk(
+  "auth/logout",
+  async ({ token }: { token: string }, { rejectWithValue, getState }) => {
+    try {
+      const { auth } = getState() as any; // Get the auth state to retrieve the session token
+      const sessionToken = auth.token; // Assuming the session token is stored in the auth state
+
+      await axios.post(
+        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/logout",
+        { token },
+        {
+          headers: {
+            "X-Session-Token": sessionToken,
+          },
+        }
+      );
+      sessionStorage.clear(); // Clear session storage on successful logout
+      return "Logout successful";
+    } catch (error: any) {
+      return rejectWithValue("Failed to logout");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.token = null;
+    clearError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(startRegistration.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(startRegistration.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(startRegistration.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(verifyEmailToken.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyEmailToken.fulfilled, (state) => {
+        state.loading = false;
+        state.isEmailVerified = true;
+      })
+      .addCase(verifyEmailToken.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(completeRegistration.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(completeRegistration.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(completeRegistration.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        login.fulfilled,
-        (state, action: PayloadAction<AuthResponse>) => {
-          state.loading = false;
-          state.user = action.payload.user;
-          state.token = action.payload.token;
-          // Save token in local storage or cookie
-        }
-      )
+      .addCase(login.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isLoggedIn = true;
+        state.username = action.payload.user;
+        state.firstName = action.payload.first_name;
+        state.token = action.payload.token;
+
+        // Store session data in session storage
+        sessionStorage.setItem("username", action.payload.user);
+        sessionStorage.setItem("firstName", action.payload.first_name);
+        sessionStorage.setItem("token", action.payload.token);
+        sessionStorage.setItem("lastActive", new Date().getTime().toString());
+      })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to login";
+        state.error = action.payload as string;
       })
-      .addCase(
-        register.fulfilled,
-        (state, action: PayloadAction<AuthResponse>) => {
-          state.user = action.payload.user;
-          state.token = action.payload.token;
-        }
-      );
+      .addCase(restoreSession.fulfilled, (state, action) => {
+        state.isLoggedIn = true;
+        state.username = action.payload.username;
+        state.firstName = action.payload.firstName;
+        state.token = action.payload.token;
+
+        // Optionally, store session data in state or local storage
+      });
   },
 });
 
-// Export the logout action and the reducer
-export const { logout } = authSlice.actions;
+export const { clearError } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,10 +1,13 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/onepass_logo.svg";
 import { Natification } from "./Notification";
+import { useSelector } from "react-redux";
 
 export { Nav };
 
 const Nav: React.FC = () => {
+    const { isLoggedIn } = useSelector((state: any) => state.auth);
+
     const navigate = useNavigate();
     const location = useLocation();
     const isHome = location.pathname === "/";
@@ -46,7 +49,7 @@ const Nav: React.FC = () => {
                 <img className="w-[125px]" src={logo} alt="OnePass Logo" />
             </Link>
             <div className="w-24 flex justify-end">
-
+{isLoggedIn && "User logined in"}
             </div>
         </nav>
           <Natification />

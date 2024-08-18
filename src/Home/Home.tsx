@@ -1,9 +1,13 @@
+import { useSelector } from "react-redux";
 import { Button } from "../_components"
+import { useEffect } from "react";
 
 export { Home }
 
 function Home() {
-  const auth = false;
+  const { isLoggedIn } = useSelector((state: any) => state.auth);
+  console.log("Is user logedin", isLoggedIn)
+  const auth = isLoggedIn;
 
   return (
     <div className="shadow-lg ">
