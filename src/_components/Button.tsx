@@ -9,7 +9,7 @@ interface ButtonProps {
   onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
 }
 
-const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size = 'inline', onClick }) => {
+const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size = 'inline', onClick, disabled }) => {
   // Define the base styles
   const baseStyle = "text-white text-base p-4 rounded mb-4 transition-colors duration-300";
 
@@ -26,7 +26,7 @@ const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size 
   };
 
   // Combine the styles
-  const buttonStyle = `${baseStyle} ${variations[variation]} ${sizes[size]}`;
+  const buttonStyle = `${baseStyle} ${variations[variation]} ${sizes[size]} ${disabled ? "pointer-events-none opacity-50":""}`;
 
   return (
     <Link to={url} className={buttonStyle} onClick={onClick}>

@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/onepass_logo.svg";
+import { Natification } from "./Notification";
 
 export { Nav };
 
@@ -20,6 +21,7 @@ const Nav: React.FC = () => {
     };
 
     return (
+        <header>
         <nav className="flex justify-between items-center">
             <button
                 className={`w-24 back-btn ${isHome ? "home-btn" : ""}`}
@@ -47,5 +49,7 @@ const Nav: React.FC = () => {
 
             </div>
         </nav>
+          <Natification />
+        </header>
     );
 }

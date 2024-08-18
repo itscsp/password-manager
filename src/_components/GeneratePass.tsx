@@ -1,15 +1,17 @@
-
-
 import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { Button } from "./"
+import { Button } from "./";
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../app/store';
+import { showNotification, clearNotification } from '../features/notifications/notificationSlice';
 
 const GeneratePass: React.FC = () => {
+    const dispatch = useDispatch<AppDispatch>();
+
     const [password, setPassword] = useState('');
     const [length, setLength] = useState(15);
     const [strength, setStrength] = useState(6);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [coped, setCoped] = useState(false);
+    const [copied, setCopied] = useState(false);
     const [options, setOptions] = useState({
         uppercase: true,
         lowercase: true,
@@ -17,16 +19,8 @@ const GeneratePass: React.FC = () => {
         symbols: true,
     });
 
-
     const generatePassword = () => {
-        if (!isAnyOptionSelected()) {
-            setPassword("");
-            setStrength(3)
-            setErrorMessage('Please select at least one option.');
-            return;
-        }
-
-        setErrorMessage(''); // Clear error message if everything is fine
+        if (!isAnyOptionSelected()) return;
 
         const { uppercase, lowercase, numbers, symbols } = options;
         const upperChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -65,17 +59,24 @@ const GeneratePass: React.FC = () => {
     };
 
     const isAnyOptionSelected = () => {
-        return Object.values(options).some(option => option);
+     
+        if (!options.uppercase && !options.lowercase && !options.numbers && !options.symbols) {
+            dispatch(showNotification("No options selected."));
+            return false;
+        }
+        return true;
     };
 
     const handleCopy = () => {
+        dispatch(clearNotification());
         navigator.clipboard.writeText(password);
-        setCoped(true);
+        setCopied(true);
+        dispatch(showNotification("Password copied to clipboard!"));
 
         setTimeout(() => {
-            setCoped(false);
+            setCopied(false);
+            dispatch(clearNotification());
         }, 2500);
-        // alert('Password copied to clipboard');
     };
 
     const getStrengthBarColor = () => {
@@ -89,19 +90,26 @@ const GeneratePass: React.FC = () => {
             case 3:
                 return 'bg-orange-500';
             default:
-                return 'bg-red-500'; // Default color for very weak passwords or initial state
+                return 'bg-red-500';
         }
     };
 
-    useEffect(() => { generatePassword() }, [])
+    const handleOption = (option: string) => {
+        dispatch(clearNotification());
+        setOptions({ ...options, [option]: !options[option as keyof typeof options] });
+    };
+
+    useEffect(() => {
+        generatePassword();
+    }, [options, length]);
 
     return (
-        <div className="continer flex items-center justify-center px-4">
+        <div className="container flex items-center justify-center px-4">
             <div className="md:p-6 py-6 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full">
-                <h1 className="text-2xl font-bold mb-8 text-center"><span className="text-opred font-saira">OnePass</span> Password Generator</h1>
+                <h1 className="text-2xl font-bold mb-8 text-center"><span className="text-red-500 font-saira">OnePass</span> Password Generator</h1>
                 <div className="bg-gray-900 rounded-tl-lg rounded-tr-lg mb-4">
                     <p className="text-xl font-mono text-center p-4 pb-2">{password || "***************"}</p>
-                    <div className="h-1 mt-2  overflow-hidden bg-gray-700">
+                    <div className="h-1 mt-2 overflow-hidden bg-gray-700">
                         <div className={clsx('h-full', getStrengthBarColor())} style={{ width: `${(strength / 7) * 100}%` }}></div>
                     </div>
                 </div>
@@ -128,12 +136,10 @@ const GeneratePass: React.FC = () => {
                                 type="checkbox"
                                 id={`op-pg_${option}`}
                                 checked={options[option as keyof typeof options]}
-                                onChange={() =>
-                                    setOptions({ ...options, [option]: !options[option as keyof typeof options] })
-                                }
+                                onChange={() => handleOption(option)}
                                 className="hidden op-checkbox__input"
                             />
-                            <label key={option} htmlFor={`op-pg_${option}`} className="flex items-center cursor-pointer p-3">
+                            <label htmlFor={`op-pg_${option}`} className="flex items-center cursor-pointer p-3">
                                 <span className="ml-2 uppercase font-inter">{option}</span>
                             </label>
                         </div>
@@ -143,26 +149,23 @@ const GeneratePass: React.FC = () => {
                     <Button
                         text="Generate"
                         url="#"
-                        variation="primary"  // or 'secondary' depending on your style needs
-                        size="block"        // or 'block' depending on your layout
-                        onClick={generatePassword}  // Pass the click event handler
+                        variation="primary"
+                        size="block"
+                        onClick={generatePassword}
+                        disabled={!isAnyOptionSelected()}
                     />
                     <Button
-                        text={coped ? "Copied" : "Copy"}
+                        text={copied ? "Copied" : "Copy"}
                         url="#"
-                        variation="secondary"  // or 'secondary' depending on your style needs
-                        size="block"        // or 'block' depending on your layout
-                        onClick={password ? handleCopy : generatePassword}  // Pass the click event handler
-
+                        variation="secondary"
+                        size="block"
+                        onClick={password ? handleCopy : undefined}
+                        disabled={!password}
                     />
-
                 </div>
-                {errorMessage && (
-                    <p className="text-red text-sm mt-2">{errorMessage}</p>
-                )}
             </div>
         </div>
     );
-}
+};
 
 export { GeneratePass };
