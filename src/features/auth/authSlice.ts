@@ -19,9 +19,36 @@ const initialState: AuthState = {
   username: null,
   firstName: null,
   token: null,
-  sessionToken:null,
+  sessionToken: null,
   isEmailVerified: false,
 };
+
+interface LogoutArgs {
+  sessionToken: string;
+  headerToken: string;
+}
+
+export const logout = createAsyncThunk<
+  string,
+  LogoutArgs,
+  { rejectValue: string }
+>("auth/logout", async ({ sessionToken, headerToken }, { rejectWithValue }) => {
+  try {
+    await axios.post(
+      "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/logout",
+      { token: sessionToken },
+      {
+        headers: {
+          "X-Session-Token": headerToken,
+        },
+      }
+    );
+    sessionStorage.clear(); // Clear session storage on successful logout
+    return "Logout successful";
+  } catch (error) {
+    return rejectWithValue("Failed to logout");
+  }
+});
 
 // Async thunk to handle login
 export const login = createAsyncThunk(
@@ -31,7 +58,7 @@ export const login = createAsyncThunk(
       username,
       master_password,
       encryptedData,
-    }: { username: string; master_password: string },
+    }: { username: string; master_password: string; encryptedData: string },
     { rejectWithValue }
   ) => {
     try {
@@ -39,9 +66,9 @@ export const login = createAsyncThunk(
         "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/login",
         { username, master_password }
       );
-      const sessionToken = encryptedData
-      const { message, username: user, first_name, token } = response.data;
-      return { user, first_name, token,sessionToken  };
+      const sessionToken = encryptedData;
+      const { username: user, first_name, token } = response.data;
+      return { user, first_name, token, sessionToken };
     } catch (error: any) {
       return rejectWithValue("Failed to login");
     }
@@ -109,6 +136,8 @@ export const completeRegistration = createAsyncThunk(
       );
       return "Registration completed";
     } catch (error: any) {
+      debugger;
+
       return rejectWithValue("Failed to complete registration");
     }
   }
@@ -118,7 +147,12 @@ export const completeRegistration = createAsyncThunk(
 export const restoreSession = createAsyncThunk(
   "auth/restoreSession",
   async (
-    userData: { username: string; firstName: string; token: string, sessionToken:string },
+    userData: {
+      username: string;
+      firstName: string;
+      token: string;
+      sessionToken: string | null;
+    },
     { rejectWithValue }
   ) => {
     try {
@@ -126,31 +160,6 @@ export const restoreSession = createAsyncThunk(
       return userData;
     } catch (error: any) {
       return rejectWithValue("Failed to restore session");
-    }
-  }
-);
-
-// Async thunk to handle logout
-export const logout = createAsyncThunk(
-  "auth/logout",
-  async ({ token }: { token: string }, { rejectWithValue, getState }) => {
-    try {
-      const { auth } = getState() as any; // Get the auth state to retrieve the session token
-      const sessionToken = auth.sessionToken; // Assuming the session token is stored in the auth state
-
-      await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/logout",
-        { token },
-        {
-          headers: {
-            "X-Session-Token": sessionToken,
-          },
-        }
-      );
-      sessionStorage.clear(); // Clear session storage on successful logout
-      return "Logout successful";
-    } catch (error: any) {
-      return rejectWithValue("Failed to logout");
     }
   }
 );
@@ -211,7 +220,6 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.token = action.payload.sessionToken;
 
-
         // Store session data in session storage
         sessionStorage.setItem("username", action.payload.user);
         sessionStorage.setItem("firstName", action.payload.first_name);
@@ -232,6 +240,21 @@ const authSlice = createSlice({
         state.sessionToken = action.payload.sessionToken;
 
         // Optionally, store session data in state or local storage
+      })
+      .addCase(logout.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.loading = false;
+        state.isLoggedIn = false;
+        state.username = null;
+        state.firstName = null;
+        state.token = null;
+        state.sessionToken = null;
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });

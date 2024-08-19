@@ -7,9 +7,10 @@ interface ButtonProps {
   variation?: 'primary' | 'secondary';
   size?: 'inline' | 'block';
   onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
+  disabled?: boolean; // Make this optional and default to false
 }
 
-const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size = 'inline', onClick, disabled }) => {
+const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size = 'inline', onClick, disabled = false }) => {
   // Define the base styles
   const baseStyle = "text-white text-base p-4 rounded mb-4 transition-colors duration-300";
 
@@ -26,13 +27,17 @@ const Button: React.FC<ButtonProps> = ({ text, url, variation = 'primary', size 
   };
 
   // Combine the styles
-  const buttonStyle = `${baseStyle} ${variations[variation]} ${sizes[size]} ${disabled ? "pointer-events-none opacity-50":""}`;
+  const buttonStyle = `${baseStyle} ${variations[variation]} ${sizes[size]} ${disabled ? "pointer-events-none opacity-50" : ""}`;
 
   return (
-    <Link to={url} className={buttonStyle} onClick={onClick}>
+    <Link
+      to={url}
+      className={buttonStyle}
+      onClick={disabled ? (e) => e.preventDefault() : onClick} // Prevent click action if disabled
+    >
       {text}
     </Link>
   );
 };
 
-export {Button};
+export { Button };

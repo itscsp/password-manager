@@ -1,6 +1,5 @@
 import { useSelector } from "react-redux";
 import { Button } from "../_components"
-import { useEffect } from "react";
 
 export { Home }
 

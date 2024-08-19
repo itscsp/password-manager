@@ -1,21 +1,37 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import {
   startRegistration,
   verifyEmailToken,
   completeRegistration,
-  clearError,
 } from '../features/auth/authSlice';
 import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
 import StepOne from './StepOne';
 import StepTwo from './StepTwo';
 import StepThree from './StepThree';
-import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { AppDispatch } from '../app/store'; // Adjust based on your store setup
+
+interface FormData {
+  email: string;
+  token: string;
+  name: string;
+  master_password: string;
+  confirm_master_password: string;
+}
+
+interface FormErrors {
+  email?: string;
+  token?: string;
+  name?: string;
+  master_password?: string;
+  confirm_master_password?: string;
+}
 
 const Register: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const dispatch = useDispatch();
-  const { loading, error, isEmailVerified } = useSelector((state: any) => state.auth);
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -77,15 +93,13 @@ const Register: React.FC = () => {
     setErrors(stepOneErrors);
     if (Object.keys(stepOneErrors).length === 0) {
       dispatch(clearNotification());
-      dispatch(startRegistration(formData.email))
-        .unwrap()
-        .then(() => {
-          dispatch(showNotification('Please check your email for the verification link'));
-          setCurrentStep(2);
-        })
-        .catch(() => {
-          dispatch(showNotification('Failed to send verification link'));
-        });
+      try {
+        await dispatch(startRegistration(formData.email)).unwrap();
+        dispatch(showNotification('Please check your email for the verification link'));
+        setCurrentStep(2);
+      } catch {
+        dispatch(showNotification('Failed to send verification link'));
+      }
     }
   };
 
@@ -94,15 +108,13 @@ const Register: React.FC = () => {
     setErrors(stepTwoErrors);
     if (Object.keys(stepTwoErrors).length === 0) {
       dispatch(clearNotification());
-      dispatch(verifyEmailToken({ email: formData.email, token: formData.token }))
-        .unwrap()
-        .then(() => {
-          dispatch(showNotification('Your email is verified'));
-          setCurrentStep(3);
-        })
-        .catch(() => {
-          dispatch(showNotification('Invalid verification token'));
-        });
+      try {
+        await dispatch(verifyEmailToken({ email: formData.email, token: formData.token })).unwrap();
+        dispatch(showNotification('Your email is verified'));
+        setCurrentStep(3);
+      } catch {
+        dispatch(showNotification('Invalid verification token'));
+      }
     }
   };
 
@@ -114,15 +126,13 @@ const Register: React.FC = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       dispatch(clearNotification());
-      dispatch(completeRegistration(formData))
-        .unwrap()
-        .then(() => {
-          dispatch(showNotification('Registration completed'));
-          Navigate("/acoount/login")
-        })
-        .catch(() => {
-          dispatch(showNotification('Failed to complete registration'));
-        });
+      try {
+        await dispatch(completeRegistration(formData)).unwrap();
+        dispatch(showNotification('Registration completed'));
+        navigate('/account/login');
+      } catch {
+        dispatch(showNotification('Failed to complete registration'));
+      }
     }
   };
 
@@ -138,8 +148,7 @@ const Register: React.FC = () => {
               onChange={handleChange}
               onNext={handleStepOne}
               currentStep={currentStep}
-              loading={loading}
-              error={error}
+         
             />
           )}
           {currentStep >= 2 && (
@@ -149,8 +158,7 @@ const Register: React.FC = () => {
               onChange={handleChange}
               onNext={handleStepTwo}
               currentStep={currentStep}
-              loading={loading}
-              error={error}
+           
             />
           )}
           {currentStep === 3 && (
@@ -158,9 +166,6 @@ const Register: React.FC = () => {
               formData={formData}
               errors={errors}
               onChange={handleChange}
-              onSubmit={handleSubmit}
-              loading={loading}
-              error={error}
             />
           )}
         </form>

@@ -1,13 +1,28 @@
 import React from 'react';
 
+interface FormData {
+    email: string;
+    token: string;
+    name: string;
+    master_password: string;
+    confirm_master_password: string;
+}
+
+interface FormErrors {
+    email?: string;
+    token?: string;
+    name?: string;
+    master_password?: string;
+    confirm_master_password?: string;
+}
+
 interface StepThreeProps {
     formData: FormData;
     errors: FormErrors;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-const StepThree: React.FC<StepThreeProps> = ({ formData, errors, onChange, onSubmit }) => {
+const StepThree: React.FC<StepThreeProps> = ({ formData, errors, onChange }) => {
     return (
         <>
             <div className="form-control mb-6">

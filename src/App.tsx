@@ -1,16 +1,16 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
 import { Nav, Footer, GeneratePass } from './_components';
 import { AccountLayout } from './Account';
 import { Home } from './Home';
-import { restoreSession } from "./features/auth/authSlice.ts"; // Import the restoreSession action
-import { clearNotification, showNotification } from './features/notifications/notificationSlice.ts'; // Import showNotification
+import { restoreSession } from './features/auth/authSlice'; // Import the restoreSession action
 
 import './App.css';
+import { AppDispatch } from './app/store'; // Import the AppDispatch type
 
 const App: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>(); // Ensure dispatch is correctly typed
 
   useEffect(() => {
     const username = sessionStorage.getItem('username');
@@ -26,7 +26,6 @@ const App: React.FC = () => {
         // User is still active
         const userData = { username, firstName, token, sessionToken };
         dispatch(restoreSession(userData));
-
       } else {
         sessionStorage.clear(); // Clear session if inactive for more than 10 minutes
       }

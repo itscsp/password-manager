@@ -1,17 +1,11 @@
-import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useSelector } from 'react-redux';
 import { RootState } from '../app/store';
-import { useEffect } from "react";
-import { AppDispatch } from '../app/store';
-import { clearNotification } from '../features/notifications/notificationSlice';
 
 
+export { Notification };
 
-export { Natification };
+const Notification: React.FC = () => {
 
-const Natification: React.FC = () => {
-    const dispatch = useDispatch<AppDispatch>();
-    const location = useLocation();
 
     const notifications = useSelector((state: RootState) => state.notifications.message);
 

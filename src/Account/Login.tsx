@@ -1,28 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, clearError } from '../features/auth/authSlice';
+import { login } from '../features/auth/authSlice';
 import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
 import { encryptAndFormatData } from '../utils/encryption';
+import { AppDispatch, RootState } from '../app/store'; // Adjust imports based on your store setup
+
+interface FormData {
+    username: string;
+    master_password: string;
+}
+
+interface FormErrors {
+    username?: string;
+    master_password?: string;
+}
 
 const Login: React.FC = () => {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         username: '',
         master_password: '',
     });
 
-    const [errors, setErrors] = useState<{ username?: string; master_password?: string }>({});
-    const dispatch = useDispatch();
-    const { loading, error, isLoggedIn } = useSelector((state: any) => state.auth);
+    const [errors, setErrors] = useState<FormErrors>({});
+    const dispatch = useDispatch<AppDispatch>();
+    const { loading, error } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         const storedData = sessionStorage.getItem('userToken');
         if (storedData) {
-            const [keyHex, iv, encryptedData] = storedData.split('|');
             const lastActive = sessionStorage.getItem('lastActive');
             const currentTime = new Date().getTime();
 
-            if (lastActive && currentTime - parseInt(lastActive) < 10 * 60 * 1000) {
-                // User is still active, extract the necessary data
+            if (lastActive && currentTime - parseInt(lastActive, 10) < 10 * 60 * 1000) {
                 dispatch(showNotification('User is still logged in.'));
                 // Set the state or store with the decrypted data or stored info.
                 // For now, we'll assume the user is logged in and proceed.
@@ -32,45 +41,6 @@ const Login: React.FC = () => {
         }
     }, [dispatch]);
 
-    // Helper functions for encryption
-    const bytesToBase64 = (bytes: Uint8Array) => {
-        return btoa(String.fromCharCode(...bytes));
-    };
-
-    const bytesToHex = (bytes: Uint8Array) => {
-        return Array.from(bytes, (byte) =>
-            byte.toString(16).padStart(2, '0')
-        ).join('');
-    };
-
-    const generateRandomKeyAndIV = async () => {
-        const keyBytes = crypto.getRandomValues(new Uint8Array(32)); // 32 bytes = 256 bits
-        const ivBytes = crypto.getRandomValues(new Uint8Array(16)); // 16 bytes for AES-CBC IV
-        return { keyBytes, ivBytes };
-    };
-
-    const encryptData = async (keyBytes: Uint8Array, ivBytes: Uint8Array, plaintext: string) => {
-        const key = await crypto.subtle.importKey(
-            'raw',
-            keyBytes,
-            { name: 'AES-CBC' },
-            false,
-            ['encrypt']
-        );
-
-        const encryptedBytes = await crypto.subtle.encrypt(
-            { name: 'AES-CBC', iv: ivBytes },
-            key,
-            new TextEncoder().encode(plaintext)
-        );
-
-        return {
-            encryptedData: bytesToBase64(new Uint8Array(encryptedBytes)),
-            iv: bytesToBase64(ivBytes),
-            keyHex: bytesToHex(keyBytes),
-        };
-    };
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
@@ -78,8 +48,8 @@ const Login: React.FC = () => {
         });
     };
 
-    const validateForm = () => {
-        const validationErrors: { username?: string; master_password?: string } = {};
+    const validateForm = (): FormErrors => {
+        const validationErrors: FormErrors = {};
         if (!formData.username) {
             validationErrors.username = 'Username is required';
         }
@@ -102,14 +72,15 @@ const Login: React.FC = () => {
                 const formattedData = await encryptAndFormatData(formData.master_password);
 
                 // Store encrypted master password and current timestamp in session storage
+                sessionStorage.setItem('userToken', formattedData); // Example, adjust as necessary
+                sessionStorage.setItem('lastActive', new Date().getTime().toString());
 
                 // Dispatch the login action with the encrypted master password
                 await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
 
-
                 dispatch(showNotification('Login successful'));
-                // Redirect to dashboard or wherever necessary
 
+                // Redirect to dashboard or wherever necessary
                 setTimeout(() => {
                     dispatch(clearNotification());
                 }, 3000); // Remove notification after 3 seconds
@@ -135,7 +106,7 @@ const Login: React.FC = () => {
                             placeholder='Email'
                             value={formData.username}
                             onChange={handleChange}
-                            className={`text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker`}
+                            className="text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker"
                         />
                         {errors.username && <small className="text-red-500">{errors.username}</small>}
                     </div>
@@ -148,7 +119,7 @@ const Login: React.FC = () => {
                             placeholder='Master Password'
                             value={formData.master_password}
                             onChange={handleChange}
-                            className={`text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker`}
+                            className="text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker"
                         />
                         {errors.master_password && <small className="text-red-500">{errors.master_password}</small>}
                     </div>

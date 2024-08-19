@@ -1,10 +1,28 @@
 import React from 'react';
 
+interface FormData {
+    email: string;
+    token: string;
+    name: string;
+    master_password: string;
+    confirm_master_password: string;
+}
+
+interface FormErrors {
+    email?: string;
+    token?: string;
+    name?: string;
+    master_password?: string;
+    confirm_master_password?: string;
+}
+
+
 interface StepTwoProps {
     formData: FormData;
     errors: FormErrors;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onNext: () => void;
+    currentStep:number
 }
 
 const StepTwo: React.FC<StepTwoProps> = ({ formData, errors, onChange, onNext, currentStep }) => {
