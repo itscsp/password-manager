@@ -11,8 +11,6 @@ const notificationSlice = createSlice({
   reducers: {
     showNotification: (state, action: PayloadAction<string>) => {
       state.message = action.payload;
-      debugger
-     
     },
     clearNotification: (state) => {
       state.message = "";

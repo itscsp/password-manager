@@ -17,12 +17,14 @@ const App: React.FC = () => {
     const firstName = sessionStorage.getItem('firstName');
     const token = sessionStorage.getItem('token');
     const lastActive = sessionStorage.getItem('lastActive');
+    const sessionToken = sessionStorage.getItem('sessionToken');
+
     const currentTime = new Date().getTime();
 
     if (username && firstName && token && lastActive) {
       if (currentTime - parseInt(lastActive) < 10 * 60 * 1000) {
         // User is still active
-        const userData = { username, firstName, token };
+        const userData = { username, firstName, token, sessionToken };
         dispatch(restoreSession(userData));
 
       } else {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, clearError } from '../features/auth/authSlice';
 import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
+import { encryptAndFormatData } from '../utils/encryption';
 
 const Login: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -98,21 +99,13 @@ const Login: React.FC = () => {
             dispatch(clearNotification());
 
             try {
-                const { keyBytes, ivBytes } = await generateRandomKeyAndIV();
-                const { encryptedData, iv, keyHex } = await encryptData(keyBytes, ivBytes, formData.master_password);
-
-                // Format data as "key|iv|encrypted_data"
-                const formattedData = `${keyHex}|${iv}|${encryptedData}`;
+                const formattedData = await encryptAndFormatData(formData.master_password);
 
                 // Store encrypted master password and current timestamp in session storage
 
                 // Dispatch the login action with the encrypted master password
-                await dispatch(login({ username: formData.username, master_password: formData.master_password })).unwrap();
+                await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
 
-                sessionStorage.setItem('userToken', formattedData);
-                sessionStorage.setItem('lastActive', new Date().getTime().toString());
-
-                
 
                 dispatch(showNotification('Login successful'));
                 // Redirect to dashboard or wherever necessary

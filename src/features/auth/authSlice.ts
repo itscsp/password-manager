@@ -30,6 +30,7 @@ export const login = createAsyncThunk(
     {
       username,
       master_password,
+      encryptedData,
     }: { username: string; master_password: string },
     { rejectWithValue }
   ) => {
@@ -38,8 +39,9 @@ export const login = createAsyncThunk(
         "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/login",
         { username, master_password }
       );
+      const sessionToken = encryptedData
       const { message, username: user, first_name, token } = response.data;
-      return { user, first_name, token };
+      return { user, first_name, token,sessionToken  };
     } catch (error: any) {
       return rejectWithValue("Failed to login");
     }
@@ -116,7 +118,7 @@ export const completeRegistration = createAsyncThunk(
 export const restoreSession = createAsyncThunk(
   "auth/restoreSession",
   async (
-    userData: { username: string; firstName: string; token: string },
+    userData: { username: string; firstName: string; token: string, sessionToken:string },
     { rejectWithValue }
   ) => {
     try {
@@ -134,7 +136,7 @@ export const logout = createAsyncThunk(
   async ({ token }: { token: string }, { rejectWithValue, getState }) => {
     try {
       const { auth } = getState() as any; // Get the auth state to retrieve the session token
-      const sessionToken = auth.token; // Assuming the session token is stored in the auth state
+      const sessionToken = auth.sessionToken; // Assuming the session token is stored in the auth state
 
       await axios.post(
         "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/logout",
@@ -207,11 +209,15 @@ const authSlice = createSlice({
         state.username = action.payload.user;
         state.firstName = action.payload.first_name;
         state.token = action.payload.token;
+        state.token = action.payload.sessionToken;
+
 
         // Store session data in session storage
         sessionStorage.setItem("username", action.payload.user);
         sessionStorage.setItem("firstName", action.payload.first_name);
         sessionStorage.setItem("token", action.payload.token);
+        sessionStorage.setItem("sessionToken", action.payload.sessionToken);
+
         sessionStorage.setItem("lastActive", new Date().getTime().toString());
       })
       .addCase(login.rejected, (state, action) => {
@@ -223,6 +229,7 @@ const authSlice = createSlice({
         state.username = action.payload.username;
         state.firstName = action.payload.firstName;
         state.token = action.payload.token;
+        state.sessionToken = action.payload.sessionToken;
 
         // Optionally, store session data in state or local storage
       });
