@@ -23,33 +23,13 @@ const initialState: AuthState = {
   isEmailVerified: false,
 };
 
-interface LogoutArgs {
-  sessionToken: string;
-  headerToken: string;
-}
-
-export const logout = createAsyncThunk<
-  string,
-  LogoutArgs,
-  { rejectValue: string }
->("auth/logout", async ({ sessionToken, headerToken }, { rejectWithValue }) => {
-  try {
-    await axios.post(
-      "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/logout",
-      { token: sessionToken },
-      {
-        headers: {
-          "X-Session-Token": headerToken,
-        },
-      }
-    );
-    sessionStorage.clear(); // Clear session storage on successful logout
-    return "Logout successful";
-  } catch (error) {
-    return rejectWithValue("Failed to logout");
+export const logout = createAsyncThunk<void, void, {}>(
+  "auth/logout",
+  async () => {
+    console.log("Logging out...");
+    // Perform logout operations here, such as API calls or clearing storage
   }
-});
-
+);
 // Async thunk to handle login
 export const login = createAsyncThunk(
   "auth/login",
@@ -62,15 +42,16 @@ export const login = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/login",
-        { username, master_password }
-      );
+      const response = await axios.post("/wp-json/password-manager/v1/login", {
+        username,
+        master_password,
+      });
       const sessionToken = encryptedData;
       const { username: user, first_name, token } = response.data;
       return { user, first_name, token, sessionToken };
     } catch (error: any) {
-      return rejectWithValue("Failed to login");
+      debugger;
+      return rejectWithValue(error.response.data.message);
     }
   }
 );
@@ -80,10 +61,9 @@ export const startRegistration = createAsyncThunk(
   "auth/startRegistration",
   async (email: string, { rejectWithValue }) => {
     try {
-      await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/start-registration",
-        { email }
-      );
+      await axios.post("/wp-json/password-manager/v1/start-registration", {
+        email,
+      });
       return "Verification email sent";
     } catch (error: any) {
       return rejectWithValue("Failed to send verification email");
@@ -99,10 +79,9 @@ export const verifyEmailToken = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await axios.get(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/verify-email",
-        { params: { email, token } }
-      );
+      await axios.get("/wp-json/password-manager/v1/verify-email", {
+        params: { email, token },
+      });
       return "Email verified";
     } catch (error: any) {
       return rejectWithValue("Invalid verification token");
@@ -130,10 +109,13 @@ export const completeRegistration = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/complete-registration",
-        { email, token, name, master_password, confirm_master_password }
-      );
+      await axios.post("/wp-json/password-manager/v1/complete-registration", {
+        email,
+        token,
+        name,
+        master_password,
+        confirm_master_password,
+      });
       return "Registration completed";
     } catch (error: any) {
       debugger;
@@ -245,6 +227,12 @@ const authSlice = createSlice({
         state.loading = true;
       })
       .addCase(logout.fulfilled, (state) => {
+        sessionStorage.removeItem("username");
+        sessionStorage.removeItem("firstName");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("sessionToken");
+        sessionStorage.removeItem("lastActive");
+
         state.loading = false;
         state.isLoggedIn = false;
         state.username = null;

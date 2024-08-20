@@ -23,7 +23,7 @@ const Login: React.FC = () => {
 
     const [errors, setErrors] = useState<FormErrors>({});
     const dispatch = useDispatch<AppDispatch>();
-    const { loading, error } = useSelector((state: RootState) => state.auth);
+    const { loading } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         const storedData = sessionStorage.getItem('userToken');
@@ -33,8 +33,6 @@ const Login: React.FC = () => {
 
             if (lastActive && currentTime - parseInt(lastActive, 10) < 10 * 60 * 1000) {
                 dispatch(showNotification('User is still logged in.'));
-                // Set the state or store with the decrypted data or stored info.
-                // For now, we'll assume the user is logged in and proceed.
             } else {
                 sessionStorage.clear(); // Clear storage if inactive for more than 10 minutes
             }
@@ -71,23 +69,25 @@ const Login: React.FC = () => {
             try {
                 const formattedData = await encryptAndFormatData(formData.master_password);
 
+                
+                // Dispatch the login action with the encrypted master password
+                await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
+                
+                dispatch(showNotification('Login successful'));
+
                 // Store encrypted master password and current timestamp in session storage
                 sessionStorage.setItem('userToken', formattedData); // Example, adjust as necessary
                 sessionStorage.setItem('lastActive', new Date().getTime().toString());
-
-                // Dispatch the login action with the encrypted master password
-                await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
-
-                dispatch(showNotification('Login successful'));
 
                 // Redirect to dashboard or wherever necessary
                 setTimeout(() => {
                     dispatch(clearNotification());
                 }, 3000); // Remove notification after 3 seconds
 
-            } catch (err) {
+            } catch (err: any) {
+                debugger
                 console.error('Login or Encryption Error:', err);
-                dispatch(showNotification('Failed to login'));
+                dispatch(showNotification(err));
             }
         }
     };
@@ -123,7 +123,7 @@ const Login: React.FC = () => {
                         />
                         {errors.master_password && <small className="text-red-500">{errors.master_password}</small>}
                     </div>
-                    {error && <div className="alert alert-danger">{error}</div>}
+
                     <button type="submit" className="text-white cursor-pointer text-base p-4 rounded-md mb-4 transition-colors duration-300 bg-opred hover:bg-opredHover focus:bg-opredHover active:bg-opredHover w-full text-center block" disabled={loading}>
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
