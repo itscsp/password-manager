@@ -35,7 +35,7 @@ function Home() {
           auth && <>
             <Button
               text="Passwords"
-              url="/password"
+              url="/passwords"
               variation="secondary"
               size="block"
             />

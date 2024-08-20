@@ -8,6 +8,7 @@ import { restoreSession } from './features/auth/authSlice'; // Import the restor
 
 import './App.css';
 import { AppDispatch } from './app/store'; // Import the AppDispatch type
+import { PasswordLayout } from './Passwords/PasswordLayout';
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>(); // Ensure dispatch is correctly typed
@@ -42,7 +43,11 @@ const App: React.FC = () => {
           <Route path="account/*" element={<AccountLayout />} />
           <Route path="password-generator" element={<GeneratePass />} />
 
+
+
           {/* Private Routes */}
+          <Route path="passwords/*" element={<PasswordLayout />} />
+
         </Routes>
       </div>
       <Footer />
