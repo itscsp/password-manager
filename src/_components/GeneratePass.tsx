@@ -104,7 +104,7 @@ const GeneratePass: React.FC = () => {
     }, [options, length]);
 
     return (
-        <div className="container flex items-center justify-center px-4">
+        <div className="flex items-center justify-center">
             <div className="md:p-6 py-6 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full">
                 <h1 className="text-2xl font-bold mb-8 text-center"><span className="text-red-500 font-saira">OnePass</span> Password Generator</h1>
                 <div className="bg-gray-900 rounded-tl-lg rounded-tr-lg mb-4">
