@@ -42,14 +42,14 @@ export const login = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await axios.post("/wp-json/password-manager/v1/login", {
+      const response = await axios.post("https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/login", {
         username,
         master_password,
       });
       const sessionToken = encryptedData;
       const { username: user, first_name, token } = response.data;
       return { user, first_name, token, sessionToken };
-      
+
     } catch (error: any) {
       return rejectWithValue(error.response.data.message);
     }
@@ -61,7 +61,7 @@ export const startRegistration = createAsyncThunk(
   "auth/startRegistration",
   async (email: string, { rejectWithValue }) => {
     try {
-      await axios.post("/wp-json/password-manager/v1/start-registration", {
+      await axios.post("https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/start-registration", {
         email,
       });
       return "Verification email sent";
@@ -79,7 +79,7 @@ export const verifyEmailToken = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await axios.get("/wp-json/password-manager/v1/verify-email", {
+      await axios.get("https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/verify-email", {
         params: { email, token },
       });
       return "Email verified";
@@ -109,7 +109,7 @@ export const completeRegistration = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await axios.post("/wp-json/password-manager/v1/complete-registration", {
+      await axios.post("https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/complete-registration", {
         email,
         token,
         name,
