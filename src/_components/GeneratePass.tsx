@@ -140,7 +140,7 @@ const GeneratePass: React.FC = () => {
                                 className="hidden op-checkbox__input"
                             />
                             <label htmlFor={`op-pg_${option}`} className="flex items-center cursor-pointer p-3">
-                                <span className="ml-2 uppercase font-inter">{option}</span>
+                                <span className="ml-2 uppercase font-inter md:text-base text-sm">{option}</span>
                             </label>
                         </div>
                     ))}

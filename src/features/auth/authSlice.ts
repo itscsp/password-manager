@@ -50,7 +50,7 @@ export const login = createAsyncThunk(
       const { username: user, first_name, token } = response.data;
       return { user, first_name, token, sessionToken };
     } catch (error: any) {
-      debugger;
+
       return rejectWithValue(error.response.data.message);
     }
   }
@@ -118,8 +118,6 @@ export const completeRegistration = createAsyncThunk(
       });
       return "Registration completed";
     } catch (error: any) {
-      debugger;
-
       return rejectWithValue("Failed to complete registration");
     }
   }

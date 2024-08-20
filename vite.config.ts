@@ -14,6 +14,6 @@ export default defineConfig({
           'X-Session-Token': 'your-session-token', // Add this if needed
         },
       },
-    },
+    }, 
   },
 })

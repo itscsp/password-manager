@@ -85,7 +85,6 @@ const Login: React.FC = () => {
                 }, 3000); // Remove notification after 3 seconds
 
             } catch (err: any) {
-                debugger
                 console.error('Login or Encryption Error:', err);
                 dispatch(showNotification(err));
             }
