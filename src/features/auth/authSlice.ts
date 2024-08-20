@@ -49,8 +49,8 @@ export const login = createAsyncThunk(
       const sessionToken = encryptedData;
       const { username: user, first_name, token } = response.data;
       return { user, first_name, token, sessionToken };
+      
     } catch (error: any) {
-
       return rejectWithValue(error.response.data.message);
     }
   }

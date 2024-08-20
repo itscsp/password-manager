@@ -6,7 +6,7 @@ import { logout } from '../features/auth/authSlice'; // Adjust this path
 import logo from '../assets/onepass_logo.svg';
 import { Notification } from './Notification';
 import { AppDispatch } from '../app/store';
-import { showNotification } from '../features/notifications/notificationSlice';
+import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
 
 const Nav: React.FC = () => {
 
@@ -31,10 +31,15 @@ const Nav: React.FC = () => {
         const token = sessionStorage.getItem("token");
 
         if (sessionToken && token) {
-          dispatch(logout());
-          dispatch(showNotification("User loged out"));
-          navigate('/');
-        } 
+            dispatch(logout());
+            dispatch(showNotification("User loged out"));
+            // Redirect to dashboard or wherever necessary
+            setTimeout(() => {
+                dispatch(clearNotification());
+            }, 3000); // Remove notification after 3 seconds
+            
+            navigate('/');
+        }
     };
 
     return (

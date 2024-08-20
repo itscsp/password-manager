@@ -69,15 +69,26 @@ const Login: React.FC = () => {
             try {
                 const formattedData = await encryptAndFormatData(formData.master_password);
 
-                
-                // Dispatch the login action with the encrypted master password
-                await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
-                
-                dispatch(showNotification('Login successful'));
 
-                // Store encrypted master password and current timestamp in session storage
-                sessionStorage.setItem('userToken', formattedData); // Example, adjust as necessary
-                sessionStorage.setItem('lastActive', new Date().getTime().toString());
+                // Dispatch the login action with the encrypted master password
+                // await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
+
+                // dispatch(showNotification('Login successful'));
+
+                try {
+                    await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
+                    dispatch(showNotification('Login successful'));
+                    // Store encrypted master password and current timestamp in session storage
+                    sessionStorage.setItem('userToken', formattedData); // Example, adjust as necessary
+                    sessionStorage.setItem('lastActive', new Date().getTime().toString());
+                    
+                } catch (err: any) {
+                    console.error('Login or Encryption Error:', err.message || err);
+                    dispatch(showNotification(err.message || 'Login failed'));
+                }
+
+
+
 
                 // Redirect to dashboard or wherever necessary
                 setTimeout(() => {
