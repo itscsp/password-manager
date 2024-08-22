@@ -29,13 +29,13 @@ export const fetchPasswords = createAsyncThunk(
   "passwords/fetchPasswords",
   async ({ sessionToken, token }: FetchPasswordsArgs, { rejectWithValue }) => {
     console.log(token);
-    let twoValue = token + "||" + sessionToken
+    let twoValue = token + "||" + sessionToken;
     try {
       const response = await axios.get(
         "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/get-passwords",
         {
           headers: {
-            "X-Session-Token": twoValue,
+            "x-session-token": twoValue,
           },
         }
       );

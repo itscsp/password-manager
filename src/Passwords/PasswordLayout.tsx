@@ -1,49 +1,35 @@
-import { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Navigate } from 'react-router-dom';
-import { RootState, AppDispatch } from '../app/store'; // Adjust the path accordingly
-import { fetchPasswords } from '../features/passwords/passwordSlice'; // Adjust the path accordingly
-
+import { useSelector } from 'react-redux';
+import { GetPasswords, AddPasswords } from './';
+import { Link, Route, Routes } from 'react-router-dom';
+import { RootState } from '../app/store';
 export function PasswordLayout() {
-    const dispatch: AppDispatch = useDispatch();
-    const { isLoggedIn, token, sessionToken } = useSelector((state: RootState) => state.auth);
-    const { passwords, loading, error } = useSelector((state: RootState) => state.passwords);
+    const { isLoggedIn, loading } = useSelector((state: RootState) => state.auth);
 
-    useEffect(() => {
-        if (isLoggedIn && token && sessionToken) {
-            dispatch(fetchPasswords({ token, sessionToken }));
-        }
-    }, [isLoggedIn, token, sessionToken, dispatch]);
-
-
-    // Redirect to home if not logged in
-    if (!isLoggedIn) {
-        return <Navigate to="/" />;
-    }
-
-    // Show loading state
     if (loading) {
-        return <div>Loading passwords...</div>;
+        return (
+            <div className="account-wrapper py-6 sm:px-8 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full mx-auto">
+                loading...
+            </div>
+        )
     }
 
-    // Show error message if there's an error
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
-    // Check if passwords array is empty
-    if (passwords.length === 0) {
-        return <div>No passwords found.</div>;
+    if (!loading && !isLoggedIn) {
+        return (
+            <div className="account-wrapper py-6 sm:px-8 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full mx-auto">
+                <p className='text-center'><Link to={"/account/login"} className='text-opred'>Login</Link> to view password </p>
+            </div>
+        )
     }
 
     return (
         <>
-            <h1>Your Passwords</h1>
-            <ul>
-                {passwords.map((password:any) => (
-                    <li key={password.id}>{password.url}</li>
-                ))}
-            </ul>
+            <div className="account-wrapper py-6 sm:px-8 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full mx-auto">
+                <Routes>
+                    <Route path="/" element={<GetPasswords />} />
+                    <Route path="/add" element={<AddPasswords />} />
+                </Routes>
+            </div>
+
         </>
     );
 }

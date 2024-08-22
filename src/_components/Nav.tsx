@@ -5,12 +5,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../features/auth/authSlice'; // Adjust this path
 import logo from '../assets/onepass_logo.svg';
 import { Notification } from './Notification';
-import { AppDispatch } from '../app/store';
+import { AppDispatch, RootState } from '../app/store';
 import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
 
 const Nav: React.FC = () => {
-
-    const { isLoggedIn, firstName } = useSelector((state: any) => state.auth);
+    const { token, sessionToken } = useSelector((state: RootState) => state.auth);
+    const { isLoggedIn, firstName  } = useSelector((state: any) => state.auth);
     const dispatch: AppDispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
     const location = useLocation();
@@ -27,17 +27,14 @@ const Nav: React.FC = () => {
     // Component or some place where you dispatch the logout thunk
     const handleLogout = () => {
 
-        const sessionToken = sessionStorage.getItem("sessionToken");
-        const token = sessionStorage.getItem("token");
-
         if (sessionToken && token) {
-            dispatch(logout());
+            dispatch(logout({ token, sessionToken }));
             dispatch(showNotification("User loged out"));
             // Redirect to dashboard or wherever necessary
             setTimeout(() => {
                 dispatch(clearNotification());
             }, 3000); // Remove notification after 3 seconds
-            
+
             navigate('/');
         }
     };
@@ -69,6 +66,7 @@ const Nav: React.FC = () => {
                 </Link>
                 <div className="w-24 flex justify-end items-center">
                     {isLoggedIn && `Hi, ${firstName}`}
+
                     {isLoggedIn && (
                         <button onClick={handleLogout} className="logout-button">
                             Logout

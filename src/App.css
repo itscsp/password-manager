@@ -2,7 +2,12 @@ body {
   background-color: #121212;
   color: #fff;
   font-family: "inter";
+}
 
+.loading-screen {
+  display: grid;
+  place-content: center;
+  height: 100vh;
 }
 
 .app-container {
@@ -53,7 +58,7 @@ button.back-btn.home-btn {
   accent-color: #d71340;
 }
 
-.op-checkbox__input + label{
+.op-checkbox__input + label {
   position: relative;
 }
 
@@ -61,7 +66,6 @@ input:focus {
   outline: none;
   background-color: transparent;
 }
-
 
 .op-checkbox__input + label::before {
   background-color: rgb(0, 0, 0);
@@ -78,10 +82,10 @@ input:focus {
 }
 
 .op-checkbox__input + label::after {
-  background:none;
+  background: none;
 }
 
-.op-checkbox__input:checked+label::after {
+.op-checkbox__input:checked + label::after {
   background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="17" viewBox="0 0 16 17" fill="none"><g clip-path="url(%23clip0_460_68)"><path d="M5.43433 14.0427L0.234328 8.74038C-0.0780787 8.42183 -0.0780787 7.90533 0.234328 7.58674L1.36567 6.43311C1.67808 6.11452 2.18464 6.11452 2.49705 6.43311L6.00002 10.005L13.503 2.35439C13.8154 2.03584 14.322 2.03584 14.6344 2.35439L15.7657 3.50803C16.0781 3.82659 16.0781 4.34308 15.7657 4.66167L6.5657 14.0427C6.25327 14.3613 5.74673 14.3613 5.43433 14.0427Z" fill="%23D71340"/></g><defs><clipPath id="clip0_460_68"><rect width="16" height="16.3148" fill="white" transform="translate(0 0.0411377)"/></clipPath></defs></svg>');
   content: "";
   position: absolute;
@@ -93,6 +97,6 @@ input:focus {
   transform: translate(0, -50%);
 }
 
-.op-checkbox__input+label span {
+.op-checkbox__input + label span {
   margin-left: 30px;
 }

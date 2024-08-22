@@ -4,6 +4,7 @@ import { login } from '../features/auth/authSlice';
 import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
 import { encryptAndFormatData } from '../utils/encryption';
 import { AppDispatch, RootState } from '../app/store'; // Adjust imports based on your store setup
+import { useNavigate } from 'react-router-dom';
 
 interface FormData {
     username: string;
@@ -20,6 +21,7 @@ const Login: React.FC = () => {
         username: '',
         master_password: '',
     });
+    const navigate = useNavigate(); // Initialize the navigate function
 
     const [errors, setErrors] = useState<FormErrors>({});
     const dispatch = useDispatch<AppDispatch>();
@@ -79,19 +81,22 @@ const Login: React.FC = () => {
                     await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
                     dispatch(showNotification('Login successful'));
 
+
+                    setTimeout(() => {
+                        dispatch(clearNotification());
+                    }, 3000); // Clear notification after 3 seconds
+
+                    // Redirect to the home page
+                    navigate('/');
+
                 } catch (err: any) {
                     console.error('Login or Encryption Error:', err.message || err);
                     dispatch(showNotification(err || "Login failed"));
+                    setTimeout(() => {
+                        dispatch(clearNotification());
+                    }, 3000); // Clear notification after 3 seconds
+
                 }
-
-
-
-
-                // Redirect to dashboard or wherever necessary
-                setTimeout(() => {
-                    dispatch(clearNotification());
-                }, 3000); // Remove notification after 3 seconds
-
             } catch (err: any) {
                 console.error('Login or Encryption Error:', err);
                 dispatch(showNotification(err));
