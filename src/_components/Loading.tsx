@@ -1,12 +1,19 @@
 import React from 'react';
-import logo from '../assets/onepass_logo.svg';
+import styles from './Loader.module.css';
 
 const Loading: React.FC = () => {
-    return (
-        <div className="loading-screen">
-            <img src={logo} alt="Loading..." className="w-[125px] h-auto loading-image animate-growShrink" />
-        </div>
-    );
+  return (
+    <div className={styles.loadingScreen}>
+
+      <div className={styles.container}>
+        <div className={styles.ball}></div>
+        <div className={styles.ball}></div>
+        <div className={styles.ball}></div>
+        <div className={styles.ball}></div>
+        <div className={styles.ball}></div>
+      </div>
+    </div>
+  );
 };
 
 export default Loading;

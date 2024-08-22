@@ -35,14 +35,13 @@ const App: React.FC = () => {
     }
   }, [dispatch, isLoggedIn]);
 
-  if (loading) {
-    return <Loading />
-  }
+
 
   return (
     <div className="app-container bg-opblack400 gap-5">
       <Nav />
-      <div className="onepass-container">
+      {loading && <Loading />}
+      <div className={`onepass-container`}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />

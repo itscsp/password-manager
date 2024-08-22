@@ -11,7 +11,7 @@ const GetPasswords: React.FC = () => {
 
     const dispatch: AppDispatch = useDispatch();
     const { isLoggedIn, token, sessionToken } = useSelector((state: RootState) => state.auth);
-    const { passwords, loading, error } = useSelector((state: RootState) => state.passwords);
+    const { passwords, error } = useSelector((state: RootState) => state.passwords);
     // debugger;
     useEffect(() => {
         if (isLoggedIn && token && sessionToken) {
@@ -19,11 +19,6 @@ const GetPasswords: React.FC = () => {
         }
     }, [isLoggedIn]); // Add dependencies here
 
-
-    // Show loading state
-    if (loading) {
-        return <div>Loading passwords...</div>;
-    }
 
     // Show error message if there's an error
     if (error) {

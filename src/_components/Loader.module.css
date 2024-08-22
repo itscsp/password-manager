@@ -1,0 +1,56 @@
+.loadingScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: auto; /* Ensures the loading screen covers the entire viewport */
+  }
+  
+
+  
+  .container {
+    display: grid;
+    grid-template-columns: repeat(5, 20px);
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .ball {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    animation: wave 1.5s ease-in-out infinite;
+    background-color: #a4161a; /* Darkest */
+  }
+  
+  .ball:nth-child(2) {
+    animation-delay: -0.2s;
+    background-color: #a4161a; /* Second darkest */
+  }
+  
+  .ball:nth-child(3) {
+    animation-delay: -0.4s;
+    background-color: #a4161a; /* Mid-range */
+  }
+  
+  .ball:nth-child(4) {
+    animation-delay: -0.6s;
+    background-color: #a4161a; /* Second lightest */
+  }
+  
+  .ball:nth-child(5) {
+    animation-delay: -0.8s;
+    background-color: #a4161a; /* Lightest */
+  }
+  
+  
+  @keyframes wave {
+    0%, 100% {
+      transform: translateY(10px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  

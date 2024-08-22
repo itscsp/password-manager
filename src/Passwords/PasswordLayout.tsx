@@ -5,13 +5,7 @@ import { RootState } from '../app/store';
 export function PasswordLayout() {
     const { isLoggedIn, loading } = useSelector((state: RootState) => state.auth);
 
-    if (loading) {
-        return (
-            <div className="account-wrapper py-6 sm:px-8 px-4 bg-black rounded-lg shadow-lg text-white max-w-lg w-full mx-auto">
-                loading...
-            </div>
-        )
-    }
+   
 
     if (!loading && !isLoggedIn) {
         return (
