@@ -41,7 +41,7 @@ export function PasswordLayout() {
             <h1>Your Passwords</h1>
             <ul>
                 {passwords.map((password:any) => (
-                    <li key={password.id}>{password.name}</li>
+                    <li key={password.id}>{password.url}</li>
                 ))}
             </ul>
         </>

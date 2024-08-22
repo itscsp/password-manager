@@ -37,7 +37,7 @@ class PM_Helper
         $user_id = self::validate_session_token($request);
 
 
-        // // Retrieve the headers
+        // // Retrieve the headers 
         // $headers = getallheaders();
 
         // // Extract the token from the headers

@@ -6,26 +6,193 @@ if (!defined('ABSPATH')) {
 
 class PM_Helper
 {
-    private static $master_key;
 
-    public static function init()
-    {
-        self::$master_key = getenv('MASTER_KEY'); // Ensure you have set this in your server environment
+public static function validate_session_token($request)
+{
+    // Step 1: Retrieve all headers
+    $headers = getallheaders();
+
+    // Step 2: Check if the 'X-Session-Token' header is set
+    if (isset($headers['X-Session-Token'])) {
+        // Step 3: Sanitize the session token
+        $session_token = sanitize_text_field($headers['X-Session-Token']);
+
+        // Step 4: Split the session token into two halves
+        $token_parts = explode('||', $session_token);
+
+        // Step 5: Ensure we have at least two parts
+        if (count($token_parts) < 2) {
+            // If the token doesn't split correctly, return false
+            return false;
+        }
+
+        // Step 6: Use the first half of the session token for further processing
+        $first_half_token = $token_parts[0];
+
+        // Step 7: Get the user ID from the first half of the session token
+        $user_id = self::get_user_id_from_token($first_half_token);
+
+        // Step 8: If the user ID is found, validate the session token expiration
+        if ($user_id) {
+            $stored_session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
+
+            // Step 9: Check if the session token is still valid based on expiration time
+            if ($stored_session_token_expiration && time() < $stored_session_token_expiration) {
+                return $user_id;
+            }
+        }
     }
 
-    public static function encrypt_key($key)
+    // Step 10: Return false if validation fails
+    return false;
+}
+
+
+//     public static function validate_session_token($request)
+//     {
+//         $headers = getallheaders();
+//         if (isset($headers['X-Session-Token'])) {
+//             $session_token = sanitize_text_field($headers['X-Session-Token']);
+//             $user_id = self::get_user_id_from_token($session_token);
+
+//             if ($user_id) {
+//                 // Validate the session token expiration
+//                 $stored_session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
+//                 if ($stored_session_token_expiration && time() < $stored_session_token_expiration) {
+//                     return $user_id;
+//                 }
+//             }
+//         }
+//         return false;
+//     }
+
+
+    public static function get_master_password($request)
     {
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-gcm'));
-        $tag = null;
-        $encrypted_key = openssl_encrypt($key, 'aes-256-gcm', self::$master_key, OPENSSL_RAW_DATA, $iv, $tag);
-        return base64_encode($encrypted_key . '::' . $iv . '::' . $tag);
+    // Step 1: Retrieve all headers
+    $headers = getallheaders();
+		
+// Step 3: Sanitize the session token
+        $session_token = sanitize_text_field($headers['X-Session-Token']);
+
+        // Step 4: Split the session token into two halves
+        $token_parts = explode('||', $session_token);
+
+		// Step 6: Use the first half of the session token for further processing
+        $secret_key = $token_parts[1];
+		
+        $user_id = self::validate_session_token($request);
+
+
+        // // Retrieve the headers
+        // $headers = getallheaders();
+
+        // // Extract the token from the headers
+        // $secret_key = isset($headers['Authorization']) ? trim(str_replace('Bearer', '', $headers['Authorization'])) : '';
+
+        // // Log the session token
+        // error_log('Received session token from headers: ' . $secret_key);
+
+
+        // Log the session token
+        // error_log('Received session token: ' . $secret_key);
+
+        // Check if session token is missing
+        if (empty($secret_key)) {
+            // error_log('Missing session token.');
+            // return new WP_REST_Response(array('message' => 'Missing session token.'), 400);
+            return false;
+        }
+
+        // Retrieve session token from request body
+        error_log('Retrieved session token from request body: ' . $secret_key);
+
+        if (empty($secret_key)) {
+            // error_log('Missing session token in request body.');
+            // return new WP_REST_Response(array('message' => 'Missing session token in request body.'), 400);
+            return false;
+        }
+
+        // Check if session token format is valid
+        if (strpos($secret_key, '|') === false) {
+            // error_log('Invalid session token format: ' . $secret_key);
+            // return new WP_REST_Response(array('message' => 'Invalid session token format.'), 400);
+            return false;
+        }
+
+        // Split the session token into key, iv, and encrypted data
+        list($key, $iv, $encrypted_data) = explode('|', $secret_key);
+
+        $key_bytes = hex2bin($key); // Convert hex key to bytes
+        $iv_bytes = base64_decode($iv); // Convert base64 IV to bytes
+        $encrypted_data_bytes = base64_decode($encrypted_data); // Convert base64 encrypted data to bytes
+
+        // Decrypt the data
+        $decrypted_data = openssl_decrypt(
+            $encrypted_data_bytes,
+            'aes-256-cbc',
+            $key_bytes,
+            OPENSSL_RAW_DATA,
+            $iv_bytes
+        );
+
+        if ($decrypted_data === false) {
+            // If the session token is expired, delete it
+            delete_user_meta($user_id, 'pm_session_token');
+            delete_user_meta($user_id, 'pm_session_token_expiration');
+            return false;
+        }
+
+        return $decrypted_data;
     }
 
-    public static function decrypt_key($encrypted_key)
+
+
+
+    public static function generate_encryption_key($master_password, $salt)
     {
-        list($encrypted_data, $iv, $tag) = explode('::', base64_decode($encrypted_key), 3);
-        return openssl_decrypt($encrypted_data, 'aes-256-gcm', self::$master_key, OPENSSL_RAW_DATA, $iv, $tag);
+        return hash_pbkdf2('sha256', $master_password, $salt, 100000, 32, true);
     }
+
+
+
+    public static function get_user_id_from_token($session_token)
+    {
+        global $wpdb;
+        $user_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value = %s",
+            'pm_session_token',
+            $session_token
+        ));
+
+        return $user_id ? intval($user_id) : null;
+    }
+
+    public static function generate_random_secret_key()
+    {
+        return bin2hex(random_bytes(32)); // 256-bit secret key
+    }
+
+    public static function hash_password($password)
+    {
+        return password_hash($password, PASSWORD_BCRYPT);
+    }
+
+    public static function verify_password($password, $hashed_password)
+    {
+        return password_verify($password, $hashed_password);
+    }
+
+    public static function is_valid_url($url)
+    {
+        return filter_var($url, FILTER_VALIDATE_URL) !== false;
+    }
+
+    public static function is_valid_note_length($note)
+    {
+        return strlen($note) <= 250;
+    }
+
 
     public static function generate_session_token($user_id)
     {
@@ -35,63 +202,30 @@ class PM_Helper
         return $session_token;
     }
 
-    public static function get_user_id_from_token($token)
+    public static function encrypt_data($data, $encryption_key)
     {
-        global $wpdb;
-        $user_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value = %s",
-            'pm_session_token',
-            $token
-        ));
-
-        return $user_id ? intval($user_id) : null;
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+        $encrypted_data = openssl_encrypt(
+            $data,
+            'aes-256-cbc',
+            $encryption_key,
+            OPENSSL_RAW_DATA,
+            $iv
+        );
+        return base64_encode($iv . $encrypted_data);
     }
 
-    public static function validate_token($request)
+    public static function decrypt_data($encrypted_data, $encryption_key)
     {
-        $headers = getallheaders();
-        if (isset($headers['X-Session-Token'])) {
-            $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = self::get_user_id_from_token($session_token);
-            if ($user_id) {
-                return true;
-            }
-        }
-        return false;
-
-        $headers = getallheaders();
-        if (isset($headers['X-Session-Token'])) {
-            $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = self::get_user_id_from_token($session_token);
-            if ($user_id) {
-                // Validate the session token
-                $stored_session_token = get_user_meta($user_id, 'pm_session_token', true);
-                $session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
-
-                if ($stored_session_token === $session_token && time() <= $session_token_expiration) {
-                    return true;
-                } else{
-                    self::logout_user($request);
-                }
-            }
-        }
-        return false;
+        $data = base64_decode($encrypted_data);
+        $iv = substr($data, 0, openssl_cipher_iv_length('aes-256-cbc'));
+        $encrypted_data = substr($data, openssl_cipher_iv_length('aes-256-cbc'));
+        return openssl_decrypt($encrypted_data, 'aes-256-cbc', $encryption_key, OPENSSL_RAW_DATA, $iv);
     }
 
-    public function logout_user($request)
+    // This function can be used for initializing any settings or properties.
+    public static function init()
     {
-        $headers = getallheaders();
-        if (isset($headers['X-Session-Token'])) {
-            $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = self::get_user_id_from_token($session_token);
-            if ($user_id) {
-                delete_user_meta($user_id, 'pm_session_token');
-                delete_user_meta($user_id, 'pm_session_token_expiration');
-                return new WP_REST_Response(array('message' => 'User logged out successfully.'), 200);
-            }
-        }
-        return new WP_REST_Response(array('message' => 'Invalid session token.'), 403);
+        // Placeholder for any initialization logic if needed
     }
 }
-
-PM_Helper::init();
