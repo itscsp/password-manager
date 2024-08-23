@@ -14,7 +14,7 @@ const GetPassword: React.FC = () => {
     // debugger;
     useEffect(() => {
         if (isLoggedIn && token && sessionToken) {
-            dispatch(fetchIndividualPassword({ token, sessionToken, passwordId }));
+            dispatch(fetchIndividualPassword({ sessionToken, passwordId }));
         }
     }, [isLoggedIn]);
 

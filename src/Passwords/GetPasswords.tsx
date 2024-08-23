@@ -11,12 +11,12 @@ export { GetPasswords };
 const GetPasswords: React.FC = () => {
 
     const dispatch: AppDispatch = useDispatch();
-    const { isLoggedIn, token, sessionToken } = useSelector((state: RootState) => state.auth);
+    const { isLoggedIn, sessionToken } = useSelector((state: RootState) => state.auth);
     const { passwords, error } = useSelector((state: RootState) => state.passwords);
     // debugger;
     useEffect(() => {
-        if (isLoggedIn && token && sessionToken) {
-            dispatch(fetchPasswords({ token, sessionToken }));
+        if (isLoggedIn && sessionToken) {
+            dispatch(fetchPasswords({  sessionToken }));
         }
     }, [isLoggedIn]); // Add dependencies here
 

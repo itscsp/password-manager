@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 
 const User: React.FC = () => {
     const { firstName } = useSelector((state: any) => state.auth);
-    const { token, sessionToken } = useSelector((state: RootState) => state.auth);
+    const { sessionToken } = useSelector((state: RootState) => state.auth);
     const dispatch: AppDispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
 
@@ -17,8 +17,8 @@ const User: React.FC = () => {
     // Component or some place where you dispatch the logout thunk
     const handleLogout = () => {
 
-        if (sessionToken && token) {
-            dispatch(logout({ token, sessionToken }));
+        if (sessionToken) {
+            dispatch(logout({sessionToken }));
             dispatch(showNotification("User loged out"));
             // Redirect to dashboard or wherever necessary
             setTimeout(() => {

@@ -8,38 +8,38 @@ const validatePassword = (password: string, confirmPassword?: string): string | 
     const hasSpaces = /\s/.test(password);
 
     if (password.length < minLength) {
-        return `Password must be at least ${minLength} characters long.`;
+        return `For a stronger password, consider using at least ${minLength} characters.`;
     }
-    
+
     if (password.length > maxLength) {
-        return `Password cannot exceed ${maxLength} characters.`;
+        return `You might want to keep your password under ${maxLength} characters for better security.`;
     }
 
     if (!hasUpperCase) {
-        return "Password must contain at least one uppercase letter.";
+        return `Including at least one uppercase letter can make your password more secure.`;
     }
 
     if (!hasLowerCase) {
-        return "Password must contain at least one lowercase letter.";
+        return `Adding a lowercase letter can enhance the strength of your password.`;
     }
 
     if (!hasNumbers) {
-        return "Password must contain at least one number.";
+        return `Consider including at least one number for a stronger password.`;
     }
 
     if (!hasSpecialChar) {
-        return "Password must contain at least one special character (e.g., !@#$%^&*).";
+        return `A special character (e.g., !@#$%^&*) can improve your password's security.`;
     }
 
     if (hasSpaces) {
-        return "Password cannot contain spaces.";
+        return `Avoid using spaces in your password for better security.`;
     }
 
     if (confirmPassword && password !== confirmPassword) {
-        return "Passwords do not match.";
+        return `Make sure both passwords match for confirmation.`;
     }
 
-    return null; // No errors
+    return null; // No suggestions
 };
 
-export default validatePassword
+export default validatePassword;

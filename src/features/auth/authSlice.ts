@@ -25,21 +25,20 @@ const initialState: AuthState = {
 
 interface sessionValues {
   sessionToken: string;
-  token: string;
 }
 
 export const logout = createAsyncThunk(
   "auth/logout",
-  async ({ sessionToken, token }: sessionValues, { rejectWithValue }) => {
+  async ({ sessionToken }: sessionValues, { rejectWithValue }) => {
     console.log("Logging out...");
-    let twoValue = token + "||" + sessionToken;
+
     try {
       const response = await axios.post(
         "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/logout",
         {}, // Empty object if there's no request body
         {
           headers: {
-            "x-session-token": twoValue,
+            "x-session-token": sessionToken,
           },
         }
       );
@@ -236,7 +235,7 @@ const authSlice = createSlice({
         sessionStorage.setItem("username", action.payload.user);
         sessionStorage.setItem("firstName", action.payload.first_name);
         sessionStorage.setItem("token", action.payload.token);
-        sessionStorage.setItem("sessionToken", action.payload.sessionToken);
+        sessionStorage.setItem("sessionToken", action.payload.token+"||"+action.payload.sessionToken);
 
         sessionStorage.setItem("lastActive", new Date().getTime().toString());
       })
