@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../app/store'; // Adjust the path accordingly
 import { fetchPasswords } from '../features/passwords/passwordSlice'; // Adjust the path accordingly
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 
 export { GetPasswords };
@@ -10,28 +10,29 @@ export { GetPasswords };
 
 const GetPasswords: React.FC = () => {
 
+
     const dispatch: AppDispatch = useDispatch();
     const { isLoggedIn, sessionToken } = useSelector((state: RootState) => state.auth);
-    const { passwords, error } = useSelector((state: RootState) => state.passwords);
+    const { passwords } = useSelector((state: RootState) => state.passwords);
     // debugger;
     useEffect(() => {
         if (isLoggedIn && sessionToken) {
-            dispatch(fetchPasswords({  sessionToken }));
+            dispatch(fetchPasswords({ sessionToken }));
         }
     }, [isLoggedIn]); // Add dependencies here
 
+    const navigate = useNavigate();
 
-    // Show error message if there's an error
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
+    useEffect(() => {
+        if (!isLoggedIn) {
+            navigate('/');
+        }
+    }, [isLoggedIn, navigate]);
 
-    // Check if passwords array is empty
-    if (passwords.length === 0) {
-        return <div>No passwords found.</div>;
-    }
 
-    console.log(passwords)
+
+
+
     return (
         <>
 
@@ -40,9 +41,9 @@ const GetPasswords: React.FC = () => {
                 {passwords.map((password: any) => (
                     <li key={password.id}>
                         <Link to={`./${password.id}`}>
-                        {password.url}
+                            {password.url}
                         </Link>
-                        </li>
+                    </li>
                 ))}
             </ul>
         </>

@@ -39,7 +39,7 @@ const validatePassword = (password: string, confirmPassword?: string): string | 
         return `Make sure both passwords match for confirmation.`;
     }
 
-    return null; // No suggestions
+    return ""; // No suggestions
 };
 
 export default validatePassword;

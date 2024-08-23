@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react"
+import React, {useState } from "react"
 import validatePassword from "../utils/validatePassword"
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../app/store";
 import { addPassword } from "../features/passwords/passwordSlice";
+import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
+
+import { useNavigate } from "react-router-dom";
 
 /**
  * Step 1: Create for design
@@ -30,9 +33,10 @@ interface FormErrors {
 
 const AddPasswords: React.FC = () => {
     const { sessionToken } = useSelector((state: RootState) => state.auth);
+    const navigate = useNavigate(); // Initialize the navigate function
 
 
-    console.log(sessionToken);
+    // console.log(sessionToken);
 
     const [formData, setFormData] = useState<FormData>({
         url: "",
@@ -44,28 +48,32 @@ const AddPasswords: React.FC = () => {
     const [errors, setErrors] = useState<FormErrors>({});
     const [warnings, setWarnings] = useState<FormErrors>({});
     const [loading, setLoading] = useState(false);
-    const [apiResponse, setApiResponse] = useState<string | null>(null);
     const dispatch = useDispatch<AppDispatch>();
 
-    useEffect(() => {
 
-        console.log("loading: ", loading)
-        console.log("API Response: ", apiResponse)
-
-    }, [loading, setApiResponse])
 
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+        if (e.target.name === "password") {
+            const newWarnings: FormErrors = {};
+
+
+            const passwordWarning = validatePassword(formData.password);
+            if (passwordWarning) {
+                newWarnings.password = passwordWarning;
+            }
+            setWarnings(newWarnings); // Set warnings
+        }
 
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         })
-        console.log(formData);
+        // console.log(formData);
     }
 
     const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
@@ -90,12 +98,16 @@ const AddPasswords: React.FC = () => {
         if (!formData.password.trim()) {
             newErrors.password = "Password is required";
         } else {
+
+
             const passwordWarning = validatePassword(formData.password);
             if (passwordWarning) {
                 newWarnings.password = passwordWarning;
             }
-
             setWarnings(newWarnings); // Set warnings
+
+
+
 
         }
 
@@ -116,16 +128,34 @@ const AddPasswords: React.FC = () => {
 
         if (Object.keys(validationError).length === 0) {
             setLoading(true);
-            setApiResponse(null);
+
 
             try {
 
-                debugger;
+
                 await dispatch(addPassword({ sessionToken, passwordData: formData })).unwrap();
-                setApiResponse("Password added successfully");
+
+
+                dispatch(showNotification('Password added successfully'));
+                setFormData({
+                    url: "",
+                    username: "",
+                    password: "",
+                    note: ""
+                })
+                setWarnings({})
+
+                setTimeout(() => {
+                    dispatch(clearNotification());
+                }, 3000); // Clear notification after 3 seconds
+
+                // Redirect to the home page
+                navigate('/passwords');
+
+
+
             } catch (error) {
-                // Handle different types of errors if possible
-                setApiResponse("Failed to add password");
+                dispatch(showNotification('Failed to add new password'));
             } finally {
                 setLoading(false);
             }
@@ -133,11 +163,12 @@ const AddPasswords: React.FC = () => {
     };
 
 
+
     const classes = "text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker";
 
     return (
         <>
-            <h4 className="text-center text-2xl mb-5">Add New Password</h4>
+            <h4 className="text-center text-2xl mb-5 ">Add New Password</h4>
             <form autoComplete="off" onSubmit={handleSubmit}>
                 <div className="form-control mb-4">
 
@@ -171,9 +202,10 @@ const AddPasswords: React.FC = () => {
 
                     <input
                         type="submit"
-                        value="Add"
+                        value={warnings.password ? loading ? "Adding..." : "Ignore suggestion" : loading ? "Adding..." : "Add"}
                         className="text-white cursor-pointer text-base p-4 rounded-md mb-4 transition-colors duration-300 bg-opred hover:bg-opredHover focus:bg-opredHover active:bg-opredHover w-full text-center block"
                     />
+
 
                 </div>
             </form>

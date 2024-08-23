@@ -7,9 +7,9 @@ interface AuthState {
   isLoggedIn: boolean;
   username: string | null;
   firstName: string | null;
-  token: string | null;
   sessionToken: string | null;
   isEmailVerified?: boolean;
+  remainingTime: number; // Added remaining time state
 }
 
 const initialState: AuthState = {
@@ -18,9 +18,9 @@ const initialState: AuthState = {
   isLoggedIn: false,
   username: null,
   firstName: null,
-  token: null,
   sessionToken: null,
   isEmailVerified: false,
+  remainingTime: 10 * 60, // 10 minutes in seconds
 };
 
 interface sessionValues {
@@ -69,9 +69,9 @@ export const login = createAsyncThunk(
         }
       );
 
-      const sessionToken = encryptedData;
       const { username: user, first_name, token } = response.data;
-      return { user, first_name, token, sessionToken };
+      const sessionToken = token + "||" + encryptedData;
+      return { user, first_name, sessionToken };
     } catch (error: any) {
       return rejectWithValue(error.response.data.message);
     }
@@ -161,7 +161,6 @@ export const restoreSession = createAsyncThunk(
     userData: {
       username: string;
       firstName: string;
-      token: string;
       sessionToken: string | null;
     },
     { rejectWithValue }
@@ -175,6 +174,10 @@ export const restoreSession = createAsyncThunk(
   }
 );
 
+// Timer function to update remaining time
+let timerInterval: NodeJS.Timeout;
+
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -182,6 +185,15 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    decrementTime: (state) => {
+      if (state.remainingTime > 0) {
+        state.remainingTime -= 1;
+        console.log("Remaining time:", state.remainingTime, "seconds");
+      } else {
+        clearInterval(timerInterval);
+      }
+    },
+
   },
   extraReducers: (builder) => {
     builder
@@ -228,46 +240,63 @@ const authSlice = createSlice({
         state.isLoggedIn = true;
         state.username = action.payload.user;
         state.firstName = action.payload.first_name;
-        state.token = action.payload.token;
-        state.token = action.payload.sessionToken;
+        state.sessionToken = action.payload.sessionToken;
 
-        // Store session data in session storage
         sessionStorage.setItem("username", action.payload.user);
         sessionStorage.setItem("firstName", action.payload.first_name);
-        sessionStorage.setItem("token", action.payload.token);
-        sessionStorage.setItem("sessionToken", action.payload.token+"||"+action.payload.sessionToken);
-
+        sessionStorage.setItem("sessionToken", action.payload.sessionToken);
         sessionStorage.setItem("lastActive", new Date().getTime().toString());
+
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(restoreSession.fulfilled, (state, action) => {
-        state.isLoggedIn = true;
-        state.username = action.payload.username;
-        state.firstName = action.payload.firstName;
-        state.token = action.payload.token;
-        state.sessionToken = action.payload.sessionToken;
 
-        // Optionally, store session data in state or local storage
+      .addCase(restoreSession.fulfilled, (state, action) => {
+        console.log("I am in restore session");
+
+        const username = sessionStorage.getItem("username");
+        const firstName = sessionStorage.getItem("firstName");
+        const lastActive = sessionStorage.getItem("lastActive");
+        const sessionToken = sessionStorage.getItem("sessionToken");
+
+        const currentTime = new Date().getTime();
+
+        if (username && firstName && lastActive && sessionToken) {
+          if (currentTime - parseInt(lastActive) < 10 * 60 * 1000) {
+            // User is still active
+            state.isLoggedIn = action.payload.sessionToken ? true : false;
+            state.username = action.payload.username;
+            state.firstName = action.payload.firstName;
+            state.sessionToken = action.payload.sessionToken;
+          } else {
+            sessionStorage.clear(); // Clear session if inactive for more than 10 minutes
+            sessionStorage.removeItem("username");
+            sessionStorage.removeItem("firstName");
+            sessionStorage.removeItem("sessionToken");
+            sessionStorage.removeItem("lastActive");
+
+            state.loading = false;
+            state.isLoggedIn = false;
+            state.username = null;
+            state.firstName = null;
+            state.sessionToken = null;
+          }
+          console.log("I am in restore session state:", state);
+        }
       })
       .addCase(logout.pending, (state) => {
         state.loading = true;
       })
       .addCase(logout.fulfilled, (state) => {
-        sessionStorage.removeItem("username");
-        sessionStorage.removeItem("firstName");
-        sessionStorage.removeItem("token");
-        sessionStorage.removeItem("sessionToken");
-        sessionStorage.removeItem("lastActive");
-
+        sessionStorage.clear();
         state.loading = false;
         state.isLoggedIn = false;
         state.username = null;
         state.firstName = null;
-        state.token = null;
         state.sessionToken = null;
+
       })
       .addCase(logout.rejected, (state, action) => {
         state.loading = false;

@@ -15,25 +15,25 @@ const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>(); // Ensure dispatch is correctly typed
   const { isLoggedIn, loading } = useSelector((state: RootState) => state.auth); // Use RootState type for useSelector
 
+
   useEffect(() => {
     const username = sessionStorage.getItem('username');
     const firstName = sessionStorage.getItem('firstName');
-    const token = sessionStorage.getItem('token');
     const lastActive = sessionStorage.getItem('lastActive');
     const sessionToken = sessionStorage.getItem('sessionToken');
 
     const currentTime = new Date().getTime();
 
-    if (username && firstName && token && lastActive) {
+    if (username && firstName && lastActive) {
       if (currentTime - parseInt(lastActive) < 10 * 60 * 1000) {
         // User is still active
-        const userData = { username, firstName, token, sessionToken };
+        const userData = { username, firstName, sessionToken };
         dispatch(restoreSession(userData));
       } else {
         sessionStorage.clear(); // Clear session if inactive for more than 10 minutes
       }
     }
-  }, [dispatch, isLoggedIn]);
+  }, [isLoggedIn]);
 
 
 

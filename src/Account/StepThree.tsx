@@ -35,7 +35,7 @@ const StepThree: React.FC<StepThreeProps> = ({ formData, errors, onChange }) => 
                     className="text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker"
                     onChange={onChange}
                 />
-                {errors.name && <small className='text-red-500'>{errors.name}</small>}
+                {errors.name && <small className='mt-2 px-4 text-opred'>{errors.name}</small>}
             </div>
             <div className="form-control mb-6">
                 <input
@@ -47,7 +47,7 @@ const StepThree: React.FC<StepThreeProps> = ({ formData, errors, onChange }) => 
                     className="text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker"
                     onChange={onChange}
                 />
-                {errors.master_password && <small className="text-red-500">{errors.master_password}</small>}
+                {errors.master_password && <small className='mt-2 px-4 text-opred'>{errors.master_password}</small>}
             </div>
             <div className="form-control mb-6">
                 <input
@@ -59,7 +59,7 @@ const StepThree: React.FC<StepThreeProps> = ({ formData, errors, onChange }) => 
                     className="text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker"
                     onChange={onChange}
                 />
-                {errors.confirm_master_password && <small className="text-red-500">{errors.confirm_master_password}</small>}
+                {errors.confirm_master_password && <small className='mt-2 px-4 text-opred'>{errors.confirm_master_password}</small>}
             </div>
             <input
                 type="submit"

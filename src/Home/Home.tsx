@@ -5,7 +5,7 @@ export { Home }
 
 function Home() {
   const { isLoggedIn } = useSelector((state: any) => state.auth);
-  console.log("Is user logedin", isLoggedIn)
+
   const auth = isLoggedIn;
 
   return (

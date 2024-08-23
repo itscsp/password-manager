@@ -13,7 +13,6 @@ const User: React.FC = () => {
     const navigate = useNavigate();
 
 
-
     // Component or some place where you dispatch the logout thunk
     const handleLogout = () => {
 
@@ -24,8 +23,7 @@ const User: React.FC = () => {
             setTimeout(() => {
                 dispatch(clearNotification());
             }, 3000); // Remove notification after 3 seconds
-            navigate("/")
-        
+            navigate("/");
         }
     };
 
