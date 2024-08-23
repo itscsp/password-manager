@@ -1,17 +1,13 @@
 // _components/Nav.tsx
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import {  useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { logout } from '../features/auth/authSlice'; // Adjust this path
 import logo from '../assets/onepass_logo.svg';
 import { Notification } from './Notification';
-import { AppDispatch, RootState } from '../app/store';
-import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
+
 
 const Nav: React.FC = () => {
-    const { token, sessionToken } = useSelector((state: RootState) => state.auth);
-    const { isLoggedIn, firstName  } = useSelector((state: any) => state.auth);
-    const dispatch: AppDispatch = useDispatch<AppDispatch>();
+    const { isLoggedIn } = useSelector((state: any) => state.auth);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -24,20 +20,7 @@ const Nav: React.FC = () => {
             navigate('/');
         }
     };
-    // Component or some place where you dispatch the logout thunk
-    const handleLogout = () => {
 
-        if (sessionToken && token) {
-            dispatch(logout({ token, sessionToken }));
-            dispatch(showNotification("User loged out"));
-            // Redirect to dashboard or wherever necessary
-            setTimeout(() => {
-                dispatch(clearNotification());
-            }, 3000); // Remove notification after 3 seconds
-
-            navigate('/');
-        }
-    };
 
     return (
         <header>
@@ -65,13 +48,14 @@ const Nav: React.FC = () => {
                     <img className="w-[125px] h-auto" src={logo} alt="Logo" />
                 </Link>
                 <div className="w-24 flex justify-end items-center">
-                    {isLoggedIn && `Hi, ${firstName}`}
+                    {isLoggedIn &&
 
-                    {isLoggedIn && (
-                        <button onClick={handleLogout} className="logout-button">
-                            Logout
-                        </button>
-                    )}
+                        <>
+                        <Link to={"account/1"}>
+                            <svg stroke="currentColor" fill="#d71340" stroke-width="0" viewBox="0 0 24 24" height="32px" width="32px" xmlns="http://www.w3.org/2000/svg"><path d="M3.78307 2.82598L12 1L20.2169 2.82598C20.6745 2.92766 21 3.33347 21 3.80217V13.7889C21 15.795 19.9974 17.6684 18.3282 18.7812L12 23L5.6718 18.7812C4.00261 17.6684 3 15.795 3 13.7889V3.80217C3 3.33347 3.32553 2.92766 3.78307 2.82598ZM12 11C13.3807 11 14.5 9.88071 14.5 8.5C14.5 7.11929 13.3807 6 12 6C10.6193 6 9.5 7.11929 9.5 8.5C9.5 9.88071 10.6193 11 12 11ZM7.52746 16H16.4725C16.2238 13.75 14.3163 12 12 12C9.68372 12 7.77619 13.75 7.52746 16Z"></path></svg>
+                        </Link>
+                        </>
+                    }
 
                 </div>
             </nav>

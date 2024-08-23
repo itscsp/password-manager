@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { GetPasswords, AddPasswords } from './';
+import { GetPasswords, AddPasswords, UpdatePassword, GetPassword } from './';
 import { Link, Route, Routes } from 'react-router-dom';
 import { RootState } from '../app/store';
 export function PasswordLayout() {
@@ -21,6 +21,9 @@ export function PasswordLayout() {
                 <Routes>
                     <Route path="/" element={<GetPasswords />} />
                     <Route path="/add" element={<AddPasswords />} />
+                    <Route path="/edit/:id" element={<UpdatePassword />} />
+                    <Route path="/:id" element={<GetPassword />} />
+
                 </Routes>
             </div>
 

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../app/store'; // Adjust the path accordingly
 import { fetchPasswords } from '../features/passwords/passwordSlice'; // Adjust the path accordingly
+import { Link } from 'react-router-dom';
 
 
 export { GetPasswords };
@@ -36,7 +37,11 @@ const GetPasswords: React.FC = () => {
             <h1>Your Passwords</h1>
             <ul>
                 {passwords.map((password: any) => (
-                    <li key={password.id}>{password.url}</li>
+                    <li key={password.id}>
+                        <Link to={`./${password.id}`}>
+                        {password.url}
+                        </Link>
+                        </li>
                 ))}
             </ul>
         </>

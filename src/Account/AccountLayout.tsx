@@ -1,5 +1,5 @@
 import {  Route, Routes } from "react-router-dom"
-import { Login, Register } from './';
+import { Login, Register, User } from './';
 
 export { AccountLayout }
 
@@ -10,6 +10,8 @@ function AccountLayout() {
             <Routes>
                 <Route path="login" element={<Login />} />
                 <Route path="register" element={<Register />} />
+                <Route path="/:id" element={<User />} />
+
             </Routes>
         </div>
     )
