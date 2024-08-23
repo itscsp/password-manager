@@ -31,6 +31,7 @@ const GetPasswords: React.FC = () => {
         return <div>No passwords found.</div>;
     }
 
+    console.log(passwords)
     return (
         <>
 

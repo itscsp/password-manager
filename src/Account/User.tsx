@@ -3,13 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../app/store';
 import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
 import { logout } from '../features/auth/authSlice'; // Adjust this path
+import { useNavigate } from "react-router-dom";
 
 
 const User: React.FC = () => {
     const { firstName } = useSelector((state: any) => state.auth);
     const { token, sessionToken } = useSelector((state: RootState) => state.auth);
     const dispatch: AppDispatch = useDispatch<AppDispatch>();
-    // const navigate = useNavigate();
+    const navigate = useNavigate();
 
 
 
@@ -23,6 +24,8 @@ const User: React.FC = () => {
             setTimeout(() => {
                 dispatch(clearNotification());
             }, 3000); // Remove notification after 3 seconds
+            navigate("/")
+        
         }
     };
 

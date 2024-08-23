@@ -9,7 +9,7 @@ function Home() {
   const auth = isLoggedIn;
 
   return (
-    <div className="shadow-lg ">
+    <>
       <div className="bg-black rounded-lg  p-6  flex flex-col items-center justify-center h-full sm:w-96 w-full m-auto">
         {!auth &&
           <>
@@ -56,6 +56,6 @@ function Home() {
           size="block"
         />
       </div>
-    </div>
+    </>
   )
 }
