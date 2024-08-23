@@ -11,6 +11,7 @@ import StepTwo from './StepTwo';
 import StepThree from './StepThree';
 import { useNavigate } from 'react-router-dom';
 import { AppDispatch } from '../app/store'; // Adjust based on your store setup
+import validatePassword from '../utils/validatePassword';
 
 interface FormData {
   email: string;
@@ -77,8 +78,12 @@ const Register: React.FC = () => {
 
     if (!formData.master_password) {
       stepThreeErrors.master_password = 'Master password is required';
-    } else if (formData.master_password.length < 8) {
-      stepThreeErrors.master_password = 'Master password must be at least 8 characters';
+    } else {
+      const passwordError = validatePassword(formData.master_password);
+
+      if (passwordError) {
+        stepThreeErrors.master_password = passwordError;
+      }
     }
 
     if (formData.master_password !== formData.confirm_master_password) {
@@ -148,7 +153,7 @@ const Register: React.FC = () => {
               onChange={handleChange}
               onNext={handleStepOne}
               currentStep={currentStep}
-         
+
             />
           )}
           {currentStep >= 2 && (
@@ -158,7 +163,7 @@ const Register: React.FC = () => {
               onChange={handleChange}
               onNext={handleStepTwo}
               currentStep={currentStep}
-           
+
             />
           )}
           {currentStep === 3 && (
