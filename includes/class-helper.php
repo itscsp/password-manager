@@ -7,50 +7,121 @@ if (!defined('ABSPATH')) {
 class PM_Helper
 {
 
+    // public static function validate_session_token($request)
+    // {
+    //     // Step 1: Retrieve all headers
+    //     $headers = getallheaders();
+
+    //     // Step 2: Check if the 'X-Session-Token' header is set
+    //     if (isset($headers['x-session-token'])) {
+    //         // Step 3: Sanitize the session token
+    //         $session_token = sanitize_text_field($headers['x-session-token']);
+
+    //         // Step 4: Split the session token into two halves
+    //         $token_parts = explode('||', $session_token);
+
+    //         // Step 5: Ensure we have at least two parts
+    //         if (count($token_parts) < 2) {
+    //             // If the token doesn't split correctly, return false
+    //             return false;
+    //         }
+
+    //         // Step 6: Use the first half of the session token for further processing
+    //         $first_half_token = $token_parts[0];
+
+    //         // Step 7: Get the user ID from the first half of the session token
+    //         $user_id = self::get_user_id_from_token($first_half_token);
+
+    //         // Step 8: If the user ID is found, validate the session token expiration
+    //         if ($user_id) {
+    //             $stored_session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
+
+    //             // Step 9: Check if the session token is still valid based on expiration time
+    //             if ($stored_session_token_expiration && time() < $stored_session_token_expiration) {
+    //                 return $user_id;
+    //             }
+    //         }
+    //     }
+
+    //     // Step 10: Return false if validation fails
+    //     return false;
+    // }
 
 
     public static function validate_session_token($request)
     {
+        // Step 1: Retrieve all headers
         $headers = getallheaders();
-        if (isset($headers['X-Session-Token'])) {
-            $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = self::get_user_id_from_token($session_token);
+        error_log('Headers retrieved: ' . print_r($headers, true));
 
-            if ($user_id) {
-                // Validate the session token expiration
-                $stored_session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
-                if ($stored_session_token_expiration && time() < $stored_session_token_expiration) {
-                    return $user_id;
-                }
+        // Step 2: Check if the 'X-Session-Token' header is set
+        if (isset($headers['x-session-token'])) {
+            error_log('X-Session-Token header is set.');
+
+            // Step 3: Sanitize the session token
+            $session_token = sanitize_text_field($headers['x-session-token']);
+            error_log('Sanitized session token: ' . $session_token);
+
+            // Step 4: Split the session token into two halves
+            $token_parts = explode('||', $session_token);
+            error_log('Token parts after split: ' . print_r($token_parts, true));
+
+            // Step 5: Ensure we have at least two parts
+            if (count($token_parts) < 2) {
+                // If the token doesn't split correctly, return false
+                error_log('Token split failed, not enough parts.');
+                return false;
             }
+
+            // Step 6: Use the first half of the session token for further processing
+            $first_half_token = $token_parts[0];
+            error_log('First half of the token: ' . $first_half_token);
+
+            // Step 7: Get the user ID from the first half of the session token
+            $user_id = self::get_user_id_from_token($first_half_token);
+            error_log('User ID retrieved from token: ' . $user_id);
+
+            // Step 8: If the user ID is found, validate the session token expiration
+            if ($user_id) {
+                $stored_session_token_expiration = get_user_meta($user_id, 'pm_session_token_expiration', true);
+                error_log('Stored session token expiration: ' . $stored_session_token_expiration);
+
+                // Step 9: Check if the session token is still valid based on expiration time
+                if ($stored_session_token_expiration && time() < $stored_session_token_expiration) {
+                    error_log('Session token is valid.');
+                    return $user_id;
+                } else {
+                    // Step 10: Return false if validation fails
+                    error_log('Session token validation failed.');
+                    return false;
+                }
+            } else {
+                error_log('User ID not found.');
+            }
+        } else {
+            error_log('X-Session-Token header is not set.');
         }
-        return false;
     }
+
 
 
     public static function get_master_password($request)
     {
+        // Step 1: Retrieve all headers
+        $headers = getallheaders();
 
+        // Step 3: Sanitize the session token
+        $session_token = sanitize_text_field($headers['x-session-token']);
 
-        $secret_key = sanitize_text_field($request['token']);
+        // Step 4: Split the session token into two halves
+        $token_parts = explode('||', $session_token);
+
+        // Step 6: Use the first half of the session token for further processing
+        $secret_key = $token_parts[1];
 
         $user_id = self::validate_session_token($request);
 
 
-        // // Retrieve the headers 
-        // $headers = getallheaders();
-
-        // // Extract the token from the headers
-        // $secret_key = isset($headers['Authorization']) ? trim(str_replace('Bearer', '', $headers['Authorization'])) : '';
-
-        // // Log the session token
-        // error_log('Received session token from headers: ' . $secret_key);
-
-
-        // Log the session token
-        // error_log('Received session token: ' . $secret_key);
-
-        // Check if session token is missing
         if (empty($secret_key)) {
             // error_log('Missing session token.');
             // return new WP_REST_Response(array('message' => 'Missing session token.'), 400);
@@ -94,7 +165,6 @@ class PM_Helper
             delete_user_meta($user_id, 'pm_session_token');
             delete_user_meta($user_id, 'pm_session_token_expiration');
             return false;
-
         }
 
         return $decrypted_data;
@@ -118,8 +188,18 @@ class PM_Helper
             'pm_session_token',
             $session_token
         ));
-
+        error_log("User Id" . $user_id);
         return $user_id ? intval($user_id) : null;
+    }
+
+    public static function generate_random_secret_key()
+    {
+        return bin2hex(random_bytes(32)); // 256-bit secret key
+    }
+
+    public static function hash_password($password)
+    {
+        return password_hash($password, PASSWORD_BCRYPT);
     }
 
     public static function verify_password($password, $hashed_password)

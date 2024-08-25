@@ -56,7 +56,7 @@ const GetPasswords: React.FC = () => {
                                         <div>
 
                                             <p>{password.url}</p>
-                                            <p>username</p>
+                                            <small className='block text-gray-400'>{password.username}</small>
                                         </div>
                                         <div>
 

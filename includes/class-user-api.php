@@ -59,10 +59,14 @@ class User_API
         $verification_token = wp_generate_password(32, false);
         set_transient('pm_verification_token_' . $email, $verification_token, 3600); // 1 hour expiration
 
-        $verification_url = add_query_arg(array(
-            'token' => $verification_token,
-            'email' => $email,
-        ), site_url('/wp-json/password-manager/v1/verify-email'));
+        // $verification_url = add_query_arg(array(
+        //     'token' => $verification_token,
+        //     'email' => $email,
+        // ), site_url('/wp-json/password-manager/v1/verify-email'));
+
+        $token = $verification_token;
+        $mailID = $email;
+
 
         // Load the email template
         $template_path = PM_PLUGIN_DIR . '/email-templates/welcome-email.html';
@@ -77,7 +81,9 @@ class User_API
         $logo_img_tag = '<img src="' . esc_url($logo_url) . '" alt="Company Logo">';
 
         // Replace placeholders with actual values
-        $template = str_replace('[verification_url]', esc_url($verification_url), $template);
+        $template = str_replace('[token]', $token, $template);
+        $template = str_replace('[mailid]', $mailID, $template);
+
         $template = str_replace('[logo_img_tag]', $logo_img_tag, $template);
 
         $headers = array('Content-Type: text/html; charset=UTF-8');
@@ -126,64 +132,74 @@ class User_API
 
         // Redirect to the frontend registration page with the email and token as query parameters
         // wp_redirect(PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token));
-        return new WP_REST_Response(array('message' => PM_FRONTEND_URL . '/complete-registration?email=' . urlencode($email) . '&token=' . urlencode($token)), 200);
+        return new WP_REST_Response(array('message' => "Email Verfied"), 200);
     }
 
 
 
     public function complete_registration($request)
     {
+        // Sanitize input data
         $name = sanitize_text_field($request['name']);
         $token = sanitize_text_field($request['token']);
         $master_password = sanitize_text_field($request['master_password']);
         $confirm_master_password = sanitize_text_field($request['confirm_master_password']);
-
         $email = sanitize_email($request['email']);
-        $username = $email; // We are assigning master email as username
+        $username = $email; // Assign email as username
 
+        // Check if passwords match
         if ($master_password !== $confirm_master_password) {
             return new WP_REST_Response(array('message' => 'Passwords do not match.'), 400);
         }
 
+        // Retrieve and validate the saved token
         $saved_token = get_transient('pm_verification_token_' . $email);
-
         if ($saved_token !== $token) {
             return new WP_REST_Response(array('message' => 'Invalid or expired verification token.'), 400);
         }
 
+        // Check if the username or email already exists
         if (username_exists($username) || email_exists($email)) {
             return new WP_REST_Response(array('message' => 'Username or email already exists.'), 409);
         }
+
+        // Generate a secure password for the user
         $password = wp_generate_password(32, false);
+
+        // Hash the master password for storage
+        $hashed_master_password = PM_Helper::hash_password($master_password);
+
+        // Generate a salt and encryption key based on the master password
+        $salt = bin2hex(random_bytes(16));
+        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
+
+        // Generate and encrypt a secret key
+        $secret_key = PM_Helper::generate_random_secret_key();
+        $encrypted_secret_key = PM_Helper::encrypt_data($secret_key, $encryption_key);
+
+        // Create the WordPress user
         $user_id = wp_create_user($username, $password, $email);
 
+        // Check for errors during user creation
         if (is_wp_error($user_id)) {
             return new WP_REST_Response(array('message' => $user_id->get_error_message()), 500);
         }
 
-        // Set the user role and additional information
+        // Assign the user role and store additional user data
         $user = new WP_User($user_id);
         $user->set_role('password_owner');
         update_user_meta($user_id, 'first_name', $name);
 
-        // Hash the master password for future validation
-        $hashed_master_password = PM_Helper::hash_password($master_password);
-
-        // Generate the salt and encryption key from the master password
-        $salt = bin2hex(random_bytes(16));
-        $encryption_key = PM_Helper::generate_encryption_key($master_password, $salt);
-
-        // Generate the secret key and encrypt it
-        $secret_key = PM_Helper::generate_random_secret_key();
-        $encrypted_secret_key = PM_Helper::encrypt_data($secret_key, $encryption_key);
-
-        // Store the hashed master password, encrypted secret key, and salt in user meta
+        // Store hashed password, encrypted secret key, and salt in user meta
         update_user_meta($user_id, 'pm_hashed_master_password', $hashed_master_password);
         update_user_meta($user_id, 'pm_encrypted_secret_key', $encrypted_secret_key);
         update_user_meta($user_id, 'pm_salt', $salt);
+
+        // Clean up the transient token after successful registration
         delete_transient('pm_verification_token_' . $email);
 
-        return new WP_REST_Response(array('message' => 'User registered successfully.', 'user_id' => $user_id), 201);
+        // Return a successful response
+        return new WP_REST_Response(array('message' => 'User registered successfully.', 'user_id' => $user_id), 200);
     }
 
 
@@ -207,14 +223,24 @@ class User_API
             return new WP_REST_Response(array('message' => 'Invalid master password.'), 403);
         }
 
-
         // Generate a session token
         $session_token = PM_Helper::generate_session_token($user->ID);
 
+        // Get the first name from user meta
+        $first_name = get_user_meta($user->ID, 'first_name', true);
 
-        // Return the session token
-        return new WP_REST_Response(array('message' => 'User logged in successfully.', 'token' => $session_token), 200);
+        // Return the username, first name, and session token
+        return new WP_REST_Response(
+            array(
+                'message' => 'User logged in successfully.',
+                'username' => $username,
+                'first_name' => $first_name,
+                'token' => $session_token,
+            ),
+            200
+        );
     }
+
 
 
     /**
@@ -223,9 +249,19 @@ class User_API
     public function logout_user($request)
     {
         $headers = getallheaders();
-        if (isset($headers['X-Session-Token'])) {
-            $session_token = sanitize_text_field($headers['X-Session-Token']);
-            $user_id = PM_Helper::get_user_id_from_token($session_token);
+        if (isset($headers['x-session-token'])) {
+
+            $session_token = sanitize_text_field($headers['x-session-token']);
+
+
+            // Step 4: Split the session token into two halves
+            $token_parts = explode('||', $session_token);
+
+            // Step 6: Use the first half of the session token for further processing
+            $secret_key = $token_parts[0];
+            error_log('Token'.$secret_key);
+
+            $user_id = PM_Helper::get_user_id_from_token($secret_key);
             if ($user_id) {
                 delete_user_meta($user_id, 'pm_session_token');
                 delete_user_meta($user_id, 'pm_session_token_expiration');

@@ -22,7 +22,6 @@ define('PM_INC', PM_PLUGIN_DIR . '/includes/');
 define('PM_FRONTEND_URL', 'http://localhost:8080/');
 define('ROUTE_URL', 'password-manager/v1');
 
-
 /**
  * Create Database table for plugin activation
  */
@@ -104,14 +103,34 @@ if (!function_exists('pm_uninstall_plugin')) {
     register_uninstall_hook(__FILE__, 'pm_uninstall_plugin');
 }
 
+function handle_custom_api_cors()
+{
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        // Allow specific origin, or use '*' to allow all origins
+        header('Access-Control-Allow-Origin: ' . esc_url_raw($_SERVER['HTTP_ORIGIN']));
+    } else {
+        header('Access-Control-Allow-Origin: *'); // Allow all origins if no HTTP_ORIGIN header
+    }
+
+    header('Access-Control-Allow-Methods: GET, POST, DELETE, PUT, OPTIONS');
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Headers: x-session-token, Content-Type, Authorization');
+
+    // Handle preflight OPTIONS request
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        exit(0);
+    }
+}
+add_action('rest_api_init', 'handle_custom_api_cors');
+
+
 // Initialize the plugin.
 if (!function_exists('pm_initialize_plugin')) {
     function pm_initialize_plugin()
     {
-        require_once PM_INC . 'class-helper.php';
         require_once PM_INC . 'class-user-api.php';
         require_once PM_INC . 'class-password-api.php';
+        require_once PM_INC . 'class-helper.php';
     }
-    
     add_action('plugins_loaded', 'pm_initialize_plugin');
 }
