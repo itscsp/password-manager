@@ -36,7 +36,7 @@ export default {
         },
       },
       fontSize: {
-        base: "16px", // or '1rem'
+        base: "1rem", // or '1rem'
       },
     },
   },

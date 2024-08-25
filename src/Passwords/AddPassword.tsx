@@ -1,11 +1,11 @@
-import React, {useState } from "react"
+import React, { useState } from "react"
 import validatePassword from "../utils/validatePassword"
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../app/store";
 import { addPassword } from "../features/passwords/passwordSlice";
 import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
-
-import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { Link, useNavigate } from "react-router-dom";
 import Loading from "../_components/Loading";
 
 /**
@@ -34,8 +34,12 @@ interface FormErrors {
 
 const AddPasswords: React.FC = () => {
     const { sessionToken } = useSelector((state: RootState) => state.auth);
-    
     const navigate = useNavigate(); // Initialize the navigate function
+    const [showPassword, setShowPassword] = useState(false);
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
 
     // console.log(sessionToken);
@@ -170,7 +174,12 @@ const AddPasswords: React.FC = () => {
 
     return (
         <>
-            <h4 className="text-center text-2xl mb-5 ">Add New Password</h4>
+            <div className="flex justify-between mb-8 items-center">
+                <h1 className='text-[20px]'>Add New Password</h1>
+                <Link to={"/passwords"} aria-label='view all password' className='text-opred'>
+                    View All
+                </Link>
+            </div>
             {loading && <Loading />}
 
             <form autoComplete="off" onSubmit={handleSubmit}>
@@ -190,10 +199,24 @@ const AddPasswords: React.FC = () => {
                 </div>
                 <div className="form-control mb-4">
                     <label htmlFor="password">Enter Your Password</label>
-                    <input type="text" name="password" id="password" onChange={handleInputChange} value={formData.password} className={classes} />
-                    {errors.password && <small className="text-red-500">{errors.password}</small>}
-                    <br />
-                    {warnings.password && <small className="text-yellow-500">Suggestion: {warnings.password}</small>}
+                    <div className="relative">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            name="password"
+                            id="password"
+                            onChange={handleInputChange}
+                            value={formData.password}
+                            className={classes}
+                        />
+                        <span
+                            onClick={togglePasswordVisibility}
+                            className="absolute inset-y-0 right-0 flex items-center  cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-[#585858]"
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                    </div>
+                    {errors.password && <small className="text-red-500 block">{errors.password}</small>}
+                    {warnings.password && <small className="text-yellow-500 block">Suggestion: {warnings.password}</small>}
                 </div>
 
                 <div className="form-control mb-4">
@@ -206,7 +229,7 @@ const AddPasswords: React.FC = () => {
 
                     <input
                         type="submit"
-                        value={warnings.password ? loading ? "Adding..." : "Ignore suggestion" : loading ? "Adding..." : "Add"}
+                        value={warnings.password ? loading ? "Adding..." : "Add" : loading ? "Adding..." : "Add"}
                         className="text-white cursor-pointer text-base p-4 rounded-md mb-4 transition-colors duration-300 bg-opred hover:bg-opredHover focus:bg-opredHover active:bg-opredHover w-full text-center block"
                     />
 

@@ -6,6 +6,8 @@ import { updatePassword, fetchIndividualPassword } from "../features/passwords/p
 import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
 import { useNavigate, useParams } from "react-router-dom";
 import Loading from "../_components/Loading";
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+
 
 interface FormData {
     url: string,
@@ -25,6 +27,11 @@ const UpdatePassword: React.FC = () => {
     const { sessionToken } = useSelector((state: RootState) => state.auth);
     const { id } = useParams();
     const navigate = useNavigate();
+    const [showPassword, setShowPassword] = useState(false);
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
     const [formData, setFormData] = useState<FormData>({
         url: "",
@@ -161,7 +168,22 @@ const UpdatePassword: React.FC = () => {
                     </div>
                     <div className="form-control mb-4">
                         <label htmlFor="password">Enter Your Password</label>
-                        <input type="text" name="password" id="password" onChange={handleInputChange} value={formData.password} className={classes} />
+                        <div className="relative">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            name="password"
+                            id="password"
+                            onChange={handleInputChange}
+                            value={formData.password}
+                            className={classes}
+                        />
+                        <span
+                            onClick={togglePasswordVisibility}
+                            className="absolute inset-y-0 right-0 flex items-center  cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-[#585858]"
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                    </div>
                         {errors.password && <small className="text-red-500">{errors.password}</small>}
                         <br />
                         {warnings.password && <small className="text-yellow-500">Suggestion: {warnings.password}</small>}

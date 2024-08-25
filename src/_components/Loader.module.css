@@ -1,28 +1,29 @@
-/* HTML: <div class="loader"></div> */
 .loader {
-  width: 40px;
+  width: 30px; /* Reduced the width */
   aspect-ratio: 1;
   color: rgb(215 19 64 / var(--tw-bg-opacity));
   position: relative;
-  background: radial-gradient(10px,currentColor 94%,#0000);
+  background: radial-gradient(7px, currentColor 94%, #0000); /* Adjusted gradient size */
   margin: auto;
 }
+
 .loader:before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
   background:
-    radial-gradient(9px at bottom right,#0000 94%,currentColor) top    left,
-    radial-gradient(9px at bottom left ,#0000 94%,currentColor) top    right,
-    radial-gradient(9px at top    right,#0000 94%,currentColor) bottom left,
-    radial-gradient(9px at top    left ,#0000 94%,currentColor) bottom right;
-  background-size: 20px 20px;
+    radial-gradient(6px at bottom right, #0000 94%, currentColor) top left, /* Adjusted gradient size */
+    radial-gradient(6px at bottom left,  #0000 94%, currentColor) top right,
+    radial-gradient(6px at top right,    #0000 94%, currentColor) bottom left,
+    radial-gradient(6px at top left,     #0000 94%, currentColor) bottom right;
+  background-size: 15px 15px; /* Adjusted background size */
   background-repeat: no-repeat;
-  animation: l18 1.5s infinite cubic-bezier(0.3,1,0,1);
+  animation: l18 1.5s infinite cubic-bezier(0.3, 1, 0, 1);
 }
+
 @keyframes l18 {
-   33%  {inset:-10px;transform: rotate(0deg)}
-   66%  {inset:-10px;transform: rotate(90deg)}
-   100% {inset:0    ;transform: rotate(90deg)}
+   33%  {inset:-7px; transform: rotate(0deg)} /* Adjusted inset */
+   66%  {inset:-7px; transform: rotate(90deg)}
+   100% {inset:0; transform: rotate(90deg)}
 }

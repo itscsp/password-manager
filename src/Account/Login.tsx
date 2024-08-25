@@ -5,6 +5,8 @@ import { clearNotification, showNotification } from '../features/notifications/n
 import { encryptAndFormatData } from '../utils/encryption';
 import { AppDispatch, RootState } from '../app/store'; // Adjust imports based on your store setup
 import { useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Importing icons
+
 
 interface FormData {
     username: string;
@@ -17,11 +19,16 @@ interface FormErrors {
 }
 
 const Login: React.FC = () => {
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState<FormData>({
         username: '',
         master_password: '',
     });
     const navigate = useNavigate(); // Initialize the navigate function
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
     const [errors, setErrors] = useState<FormErrors>({});
     const dispatch = useDispatch<AppDispatch>();
@@ -118,15 +125,23 @@ const Login: React.FC = () => {
                     </div>
                     <div className="form-control mb-6">
                         <label htmlFor="master_password">Master Password</label>
-                        <input
-                            type="password"
-                            id="master_password"
-                            name="master_password"
-                            placeholder='Master Password'
-                            value={formData.master_password}
-                            onChange={handleChange}
-                            className="text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker"
-                        />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                id="master_password"
+                                name="master_password"
+                                placeholder="Master Password"
+                                value={formData.master_password}
+                                onChange={handleChange}
+                                className="text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker"
+                            />
+                            <span
+                                onClick={togglePasswordVisibility}
+                                className="absolute inset-y-0 right-0 flex items-center cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-[#585858]"
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </span>
+                        </div>
                         {errors.master_password && <small className="text-red-500">{errors.master_password}</small>}
                     </div>
 
