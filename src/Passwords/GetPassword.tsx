@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { AppDispatch, RootState } from "../app/store";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchIndividualPassword } from "../features/passwords/passwordSlice";
+import { deletePassword, fetchIndividualPassword } from "../features/passwords/passwordSlice";
+import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
 
 const GetPassword: React.FC = () => {
     const { id } = useParams();
@@ -28,8 +29,29 @@ const GetPassword: React.FC = () => {
     let currentIndex = passwords.findIndex((p) => Number(p.id) === passwordId);
     const currentPassword = passwords[currentIndex];
 
+    const navigate = useNavigate();
+
+
     if (!currentPassword) {
-        return <div>Password not found.</div>;
+        navigate('/passwords');
+    }
+
+
+    const deleteHandler = async () => {
+        console.log("From Get Password Page:", passwordId);
+        await dispatch(deletePassword({ sessionToken, passwordId })).then((result) => {
+
+            if (result.meta.requestStatus === "fulfilled") {
+                dispatch(showNotification(`${currentPassword.url} is deleted successfully`));
+
+                setTimeout(() => {
+                    dispatch(clearNotification());
+                }, 3000); // Clear notification after 3 seconds
+
+            }
+        });
+
+        console.log("password deleted")
     }
 
     return (
@@ -47,7 +69,7 @@ const GetPassword: React.FC = () => {
                 <hr className="mb-4" />
                 <div className="flex justify-between">
                     <Link className="text-opred" to={`/passwords/edit/${id}`}>Edit</Link>
-                    <Link className="text-opred" to={`/delete/${id}`}>Delete</Link>
+                    <button className="text-opred" onClick={deleteHandler}>Delete</button>
                 </div>
             </div>
         </>

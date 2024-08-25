@@ -30,9 +30,6 @@ const GetPasswords: React.FC = () => {
     }, [isLoggedIn, navigate]);
 
 
-
-
-
     return (
         <>
 

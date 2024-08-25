@@ -16,6 +16,7 @@ interface Password {
 
 interface PasswordState {
   passwords: Password[];
+  message: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -32,8 +33,14 @@ interface FetchPasswordArgs extends FetchPasswordsArgs {
   passwordId: number; // Assuming ID is a string
 }
 
+interface UpdatePasswordArgs extends FetchPasswordsArgs {
+  passwordId: number;
+  passwordData: Partial<Password>;
+}
+
 const initialState: PasswordState = {
   passwords: [],
+  message: null,
   loading: false,
   error: null,
 };
@@ -92,7 +99,6 @@ export const addPassword = createAsyncThunk(
     { sessionToken, passwordData }: AddPasswordArgs,
     { rejectWithValue }
   ) => {
-
     console.log(passwordData);
 
     // Create FormData object
@@ -101,6 +107,8 @@ export const addPassword = createAsyncThunk(
     formData.append("password", passwordData.password);
     formData.append("url", passwordData.url);
     formData.append("note", passwordData.note ? passwordData.note : "");
+
+    console.log(formData)
 
     try {
       const response = await axios.post<Password>(
@@ -121,6 +129,66 @@ export const addPassword = createAsyncThunk(
     }
   }
 );
+
+// Delete password
+export const deletePassword = createAsyncThunk(
+  "passwords/delete",
+  async (
+    { sessionToken, passwordId }: FetchPasswordArgs,
+    { rejectWithValue }
+  ) => {
+    try {
+      console.log(sessionToken, passwordId);
+
+      // API call
+      const response = await axios.delete(
+        `https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/delete-password/${passwordId}`,
+        {
+          headers: {
+            "x-session-token": sessionToken,
+          },
+        }
+      );
+
+      return { passwordId, message: response.data.message };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to delete password"
+      );
+    }
+  }
+);
+
+export const updatePassword = createAsyncThunk(
+  "passwords/update",
+  async (
+    { sessionToken, passwordId, passwordData }: UpdatePasswordArgs,
+    { rejectWithValue }
+  ) => {
+    console.log("Updating Password ID:", passwordId);
+    console.log("Password Data:", passwordData);
+
+    try {
+      const response = await axios.put<Password>(
+        `https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/update-password/${passwordId}`,
+        passwordData,
+        {
+          headers: {
+            "x-session-token": sessionToken,
+            "Content-Type": "application/json", 
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Error updating password:", error);
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update password"
+      );
+    }
+  }
+);
+
 
 const passwordSlice = createSlice({
   name: "passwords",
@@ -159,6 +227,28 @@ const passwordSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+      .addCase(deletePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deletePassword.fulfilled, (state, action) => {
+        state.loading = false;
+        console.log(action);
+        console.log(state);
+
+        const index = state.passwords.findIndex(
+          (p) => Number(p.id) === Number(action.payload.passwordId)
+        );
+        if (index !== -1) {
+          state.passwords.splice(index, 1); // Remove the password from the array
+        }
+
+        state.message = action.payload.message;
+      })
+      .addCase(deletePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
       .addCase(addPassword.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -168,6 +258,19 @@ const passwordSlice = createSlice({
         state.passwords.push(action.payload);
       })
       .addCase(addPassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(updatePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updatePassword.fulfilled, (state, action) => {
+        state.loading = false;
+        state.passwords.push(action.payload);
+        state.message = "Password updated successfully";
+      })
+      .addCase(updatePassword.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
