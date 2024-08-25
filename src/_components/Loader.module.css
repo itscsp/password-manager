@@ -1,56 +1,28 @@
-.loadingScreen {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: auto; /* Ensures the loading screen covers the entire viewport */
-  }
-  
-
-  
-  .container {
-    display: grid;
-    grid-template-columns: repeat(5, 20px);
-    gap: 10px;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .ball {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    animation: wave 1.5s ease-in-out infinite;
-    background-color: #a4161a; /* Darkest */
-  }
-  
-  .ball:nth-child(2) {
-    animation-delay: -0.2s;
-    background-color: #a4161a; /* Second darkest */
-  }
-  
-  .ball:nth-child(3) {
-    animation-delay: -0.4s;
-    background-color: #a4161a; /* Mid-range */
-  }
-  
-  .ball:nth-child(4) {
-    animation-delay: -0.6s;
-    background-color: #a4161a; /* Second lightest */
-  }
-  
-  .ball:nth-child(5) {
-    animation-delay: -0.8s;
-    background-color: #a4161a; /* Lightest */
-  }
-  
-  
-  @keyframes wave {
-    0%, 100% {
-      transform: translateY(10px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-  
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: 40px;
+  aspect-ratio: 1;
+  color: rgb(215 19 64 / var(--tw-bg-opacity));
+  position: relative;
+  background: radial-gradient(10px,currentColor 94%,#0000);
+  margin: auto;
+}
+.loader:before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(9px at bottom right,#0000 94%,currentColor) top    left,
+    radial-gradient(9px at bottom left ,#0000 94%,currentColor) top    right,
+    radial-gradient(9px at top    right,#0000 94%,currentColor) bottom left,
+    radial-gradient(9px at top    left ,#0000 94%,currentColor) bottom right;
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  animation: l18 1.5s infinite cubic-bezier(0.3,1,0,1);
+}
+@keyframes l18 {
+   33%  {inset:-10px;transform: rotate(0deg)}
+   66%  {inset:-10px;transform: rotate(90deg)}
+   100% {inset:0    ;transform: rotate(90deg)}
+}

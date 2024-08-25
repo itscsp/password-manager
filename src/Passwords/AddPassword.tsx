@@ -6,6 +6,7 @@ import { addPassword } from "../features/passwords/passwordSlice";
 import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
 
 import { useNavigate } from "react-router-dom";
+import Loading from "../_components/Loading";
 
 /**
  * Step 1: Create for design
@@ -33,6 +34,7 @@ interface FormErrors {
 
 const AddPasswords: React.FC = () => {
     const { sessionToken } = useSelector((state: RootState) => state.auth);
+    
     const navigate = useNavigate(); // Initialize the navigate function
 
 
@@ -169,6 +171,8 @@ const AddPasswords: React.FC = () => {
     return (
         <>
             <h4 className="text-center text-2xl mb-5 ">Add New Password</h4>
+            {loading && <Loading />}
+
             <form autoComplete="off" onSubmit={handleSubmit}>
                 <div className="form-control mb-4">
 

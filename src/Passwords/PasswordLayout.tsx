@@ -1,16 +1,8 @@
-import { useSelector } from 'react-redux';
 import { GetPasswords, AddPasswords, UpdatePassword, GetPassword } from './';
-import { Route, Routes, useNavigate } from 'react-router-dom';
-import { RootState } from '../app/store';
+import { Route, Routes } from 'react-router-dom';
+
 
 export function PasswordLayout() {
-
-    const { isLoggedIn } = useSelector((state: RootState) => state.auth); // Use RootState type for useSelector
-    const navigate = useNavigate();
-
-    if (!isLoggedIn) {
-        navigate("/")
-    }
 
     return (
         <>

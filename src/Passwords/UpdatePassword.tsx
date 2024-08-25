@@ -5,6 +5,7 @@ import { AppDispatch, RootState } from "../app/store";
 import { updatePassword, fetchIndividualPassword } from "../features/passwords/passwordSlice";
 import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
 import { useNavigate, useParams } from "react-router-dom";
+import Loading from "../_components/Loading";
 
 interface FormData {
     url: string,
@@ -40,6 +41,8 @@ const UpdatePassword: React.FC = () => {
     const passwordId = Number(id)
 
     useEffect(() => {
+        setLoading(true);
+
         if (sessionToken && id) {
             dispatch(fetchIndividualPassword({ sessionToken, passwordId }))
                 .unwrap()
@@ -50,6 +53,8 @@ const UpdatePassword: React.FC = () => {
                         password: data.password || "",
                         note: data.note || ""
                     });
+                    setLoading(false);
+
                 })
                 .catch((error: any) => {
                     console.log(error)
@@ -141,37 +146,40 @@ const UpdatePassword: React.FC = () => {
     return (
         <>
             <h4 className="text-center text-2xl mb-5 ">Update Password</h4>
-            <form autoComplete="off" onSubmit={handleSubmit}>
-                <div className="form-control mb-4">
-                    <label htmlFor="url">Enter your website URL</label>
-                    <input type="text" name="url" placeholder="http://google.com" id="url" onChange={handleInputChange} value={formData.url} className={classes} />
-                    {errors.url && <small className="text-red-500">{errors.url}</small>}
-                </div>
-                <div className="form-control mb-4">
-                    <label htmlFor="username">Enter your username</label>
-                    <input type="text" name="username" id="username" onChange={handleInputChange} value={formData.username} className={classes} />
-                    {errors.username && <small className="text-red-500">{errors.username}</small>}
-                </div>
-                <div className="form-control mb-4">
-                    <label htmlFor="password">Enter Your Password</label>
-                    <input type="text" name="password" id="password" onChange={handleInputChange} value={formData.password} className={classes} />
-                    {errors.password && <small className="text-red-500">{errors.password}</small>}
-                    <br />
-                    {warnings.password && <small className="text-yellow-500">Suggestion: {warnings.password}</small>}
-                </div>
-                <div className="form-control mb-4">
-                    <label htmlFor="note">Note</label>
-                    <textarea id="note" name="note" onChange={handleTextAreaChange} value={formData.note} className={classes}></textarea>
-                    {errors.note && <small className="text-red-500">{errors.note}</small>}
-                </div>
-                <div className="form-control mb-4">
-                    <input
-                        type="submit"
-                        value={warnings.password ? loading ? "Updating..." : "Ignore suggestion" : loading ? "Updating..." : "Update"}
-                        className="text-white cursor-pointer text-base p-4 rounded-md mb-4 transition-colors duration-300 bg-opred hover:bg-opredHover focus:bg-opredHover active:bg-opredHover w-full text-center block"
-                    />
-                </div>
-            </form>
+            {loading && <Loading />}
+            {!loading &&
+                <form autoComplete="off" onSubmit={handleSubmit}>
+                    <div className="form-control mb-4">
+                        <label htmlFor="url">Enter your website URL</label>
+                        <input type="text" name="url" placeholder="http://google.com" id="url" onChange={handleInputChange} value={formData.url} className={classes} />
+                        {errors.url && <small className="text-red-500">{errors.url}</small>}
+                    </div>
+                    <div className="form-control mb-4">
+                        <label htmlFor="username">Enter your username</label>
+                        <input type="text" name="username" id="username" onChange={handleInputChange} value={formData.username} className={classes} />
+                        {errors.username && <small className="text-red-500">{errors.username}</small>}
+                    </div>
+                    <div className="form-control mb-4">
+                        <label htmlFor="password">Enter Your Password</label>
+                        <input type="text" name="password" id="password" onChange={handleInputChange} value={formData.password} className={classes} />
+                        {errors.password && <small className="text-red-500">{errors.password}</small>}
+                        <br />
+                        {warnings.password && <small className="text-yellow-500">Suggestion: {warnings.password}</small>}
+                    </div>
+                    <div className="form-control mb-4">
+                        <label htmlFor="note">Note</label>
+                        <textarea id="note" name="note" onChange={handleTextAreaChange} value={formData.note} className={classes}></textarea>
+                        {errors.note && <small className="text-red-500">{errors.note}</small>}
+                    </div>
+                    <div className="form-control mb-4">
+                        <input
+                            type="submit"
+                            value={warnings.password ? loading ? "Updating..." : "Ignore suggestion" : loading ? "Updating..." : "Update"}
+                            className="text-white cursor-pointer text-base p-4 rounded-md mb-4 transition-colors duration-300 bg-opred hover:bg-opredHover focus:bg-opredHover active:bg-opredHover w-full text-center block"
+                        />
+                    </div>
+                </form>
+            }
         </>
     );
 };

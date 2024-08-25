@@ -4,52 +4,61 @@ import { AppDispatch, RootState } from "../app/store";
 import { useDispatch, useSelector } from "react-redux";
 import { deletePassword, fetchIndividualPassword } from "../features/passwords/passwordSlice";
 import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
+import Loading from "../_components/Loading";
 
 const GetPassword: React.FC = () => {
     const { id } = useParams();
     const dispatch: AppDispatch = useDispatch();
     const { isLoggedIn, sessionToken } = useSelector((state: RootState) => state.auth);
-    const { passwords, error } = useSelector((state: RootState) => state.passwords);
+    const { passwords, error, loading } = useSelector((state: RootState) => state.passwords);
     const passwordId = Number(id);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (isLoggedIn && sessionToken) {
             dispatch(fetchIndividualPassword({ sessionToken, passwordId }));
         }
-    }, [isLoggedIn]);
+    }, [isLoggedIn, dispatch, sessionToken, passwordId]);
 
     if (error) {
         return <div>Error: {error}</div>;
+    }
+
+    if (loading) {
+        return <Loading />;
     }
 
     if (passwords.length === 0) {
         return <div>No passwords found.</div>;
     }
 
-    let currentIndex = passwords.findIndex((p) => Number(p.id) === passwordId);
+    const currentIndex = passwords.findIndex((p) => Number(p.id) === passwordId);
     const currentPassword = passwords[currentIndex];
 
-    const navigate = useNavigate();
-
+    if (!currentPassword) {
+        return <div>Password not found.</div>; // Handle case where password is deleted or not found
+    }
 
     const deleteHandler = async () => {
         console.log("From Get Password Page:", passwordId);
-        await dispatch(deletePassword({ sessionToken, passwordId })).then((result) => {
+        const result = await dispatch(deletePassword({ sessionToken, passwordId }));
 
-            if (result.meta.requestStatus === "fulfilled") {
-                dispatch(showNotification(`${currentPassword.url} is deleted successfully`));
+        if (result.meta.requestStatus === "fulfilled") {
+            dispatch(showNotification(`${currentPassword.url} was deleted successfully`));
 
-                setTimeout(() => {
-                    dispatch(clearNotification());
-                }, 3000); // Clear notification after 3 seconds
-                navigate('/passwords');
+            setTimeout(() => {
+                dispatch(clearNotification());
+            }, 3000); // Clear notification after 3 seconds
 
-
-            }
-        });
-
-        console.log("password deleted")
-    }
+            navigate('/passwords'); // Navigate away after deletion to avoid accessing deleted data
+        } else {
+            dispatch(showNotification("Failed to delete password."));
+            setTimeout(() => {
+                dispatch(clearNotification());
+            }, 3000);
+        }
+    };
 
     return (
         <>
@@ -60,7 +69,7 @@ const GetPassword: React.FC = () => {
                         value ?
                             <li key={key}>
                                 {key.replace('_', ' ')}: {String(value)}
-                            </li> : ""
+                            </li> : null
                     ))}
                 </ul>
                 <hr className="mb-4" />
