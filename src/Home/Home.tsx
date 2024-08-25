@@ -1,13 +1,18 @@
 import { useSelector } from "react-redux";
 import { Button } from "../_components"
+import { useEffect } from "react";
 
 export { Home }
 
 function Home() {
   const { isLoggedIn } = useSelector((state: any) => state.auth);
 
-  const auth = isLoggedIn;
-
+  let auth = isLoggedIn;
+  useEffect(() => {
+    auth = isLoggedIn
+    console.log("User:", isLoggedIn)
+  }, [isLoggedIn])
+  
   return (
     <>
       <div className="bg-black rounded-lg  p-6  flex flex-col items-center justify-center h-full sm:w-96 w-full m-auto">

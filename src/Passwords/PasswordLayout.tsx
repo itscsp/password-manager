@@ -1,17 +1,16 @@
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { GetPasswords, AddPasswords, UpdatePassword, GetPassword } from './';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import { RootState } from '../app/store';
-import { useEffect } from 'react';
 
 export function PasswordLayout() {
-    const dispatch = useDispatch(); // Assign useDispatch to a variable
+
     const { isLoggedIn } = useSelector((state: RootState) => state.auth); // Use RootState type for useSelector
+    const navigate = useNavigate();
 
-    useEffect(() => {
-
-       
-    }, [isLoggedIn, dispatch]); // Add dispatch to the dependencies array
+    if (!isLoggedIn) {
+        navigate("/")
+    }
 
     return (
         <>

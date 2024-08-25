@@ -32,11 +32,6 @@ const GetPassword: React.FC = () => {
     const navigate = useNavigate();
 
 
-    if (!currentPassword) {
-        navigate('/passwords');
-    }
-
-
     const deleteHandler = async () => {
         console.log("From Get Password Page:", passwordId);
         await dispatch(deletePassword({ sessionToken, passwordId })).then((result) => {
@@ -47,6 +42,8 @@ const GetPassword: React.FC = () => {
                 setTimeout(() => {
                     dispatch(clearNotification());
                 }, 3000); // Clear notification after 3 seconds
+                navigate('/passwords');
+
 
             }
         });

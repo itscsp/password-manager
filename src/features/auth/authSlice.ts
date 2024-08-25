@@ -154,29 +154,51 @@ export const completeRegistration = createAsyncThunk(
   }
 );
 
-// Async thunk to restore session
 export const restoreSession = createAsyncThunk(
   "auth/restoreSession",
-  async (
-    userData: {
-      username: string;
-      firstName: string;
-      sessionToken: string | null;
-    },
-    { rejectWithValue }
-  ) => {
+  async (_, { rejectWithValue }) => {
     try {
-      // Optionally, you can validate or refresh the session here
-      return userData;
+      const sessionToken = sessionStorage.getItem("sessionToken");
+      const username = sessionStorage.getItem("username");
+      const firstName = sessionStorage.getItem("firstName");
+      const lastActive = sessionStorage.getItem("lastActive");
+
+      if (!sessionToken || !username || !firstName || !lastActive) {
+        return rejectWithValue("Incomplete session data.");
+      }
+
+      const lastActiveTime = parseInt(lastActive, 10);
+      if (isNaN(lastActiveTime)) {
+        return rejectWithValue("Invalid last active time.");
+      }
+
+      const currentTime = Date.now();
+      if (currentTime - lastActiveTime >= 10 * 60 * 1000) {
+        sessionStorage.clear();
+        return rejectWithValue("Session has expired.");
+      }
+
+      const response = await axios.get(
+        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/check-session",
+        {
+          headers: {
+            "x-session-token": sessionToken,
+          },
+        }
+      );
+
+      if (response.data) {
+        return { status: "valid", username, firstName, sessionToken };
+      } else {
+        sessionStorage.clear();
+        return rejectWithValue("Invalid session.");
+      }
     } catch (error: any) {
-      return rejectWithValue("Failed to restore session");
+      sessionStorage.clear();
+      return rejectWithValue("Failed to restore session: " + error.message);
     }
   }
 );
-
-// Timer function to update remaining time
-let timerInterval: NodeJS.Timeout;
-
 
 const authSlice = createSlice({
   name: "auth",
@@ -185,15 +207,14 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    decrementTime: (state) => {
-      if (state.remainingTime > 0) {
-        state.remainingTime -= 1;
-        console.log("Remaining time:", state.remainingTime, "seconds");
-      } else {
-        clearInterval(timerInterval);
-      }
+    logout: (state) => {
+      state.loading = false;
+      state.isLoggedIn = false;
+      state.username = null;
+      state.firstName = null;
+      state.sessionToken = null;
+      sessionStorage.clear();
     },
-
   },
   extraReducers: (builder) => {
     builder
@@ -246,45 +267,11 @@ const authSlice = createSlice({
         sessionStorage.setItem("firstName", action.payload.first_name);
         sessionStorage.setItem("sessionToken", action.payload.sessionToken);
         sessionStorage.setItem("lastActive", new Date().getTime().toString());
-
+        // debugger
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      })
-
-      .addCase(restoreSession.fulfilled, (state, action) => {
-        console.log("I am in restore session");
-
-        const username = sessionStorage.getItem("username");
-        const firstName = sessionStorage.getItem("firstName");
-        const lastActive = sessionStorage.getItem("lastActive");
-        const sessionToken = sessionStorage.getItem("sessionToken");
-
-        const currentTime = new Date().getTime();
-
-        if (username && firstName && lastActive && sessionToken) {
-          if (currentTime - parseInt(lastActive) < 10 * 60 * 1000) {
-            // User is still active
-            state.isLoggedIn = action.payload.sessionToken ? true : false;
-            state.username = action.payload.username;
-            state.firstName = action.payload.firstName;
-            state.sessionToken = action.payload.sessionToken;
-          } else {
-            sessionStorage.clear(); // Clear session if inactive for more than 10 minutes
-            sessionStorage.removeItem("username");
-            sessionStorage.removeItem("firstName");
-            sessionStorage.removeItem("sessionToken");
-            sessionStorage.removeItem("lastActive");
-
-            state.loading = false;
-            state.isLoggedIn = false;
-            state.username = null;
-            state.firstName = null;
-            state.sessionToken = null;
-          }
-          console.log("I am in restore session state:", state);
-        }
       })
       .addCase(logout.pending, (state) => {
         state.loading = true;
@@ -296,10 +283,29 @@ const authSlice = createSlice({
         state.username = null;
         state.firstName = null;
         state.sessionToken = null;
-
       })
       .addCase(logout.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(restoreSession.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(restoreSession.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isLoggedIn = true;
+        state.username = action.payload.username;
+        state.firstName = action.payload.firstName;
+        state.sessionToken = action.payload.sessionToken;
+        state.error = null;
+      })
+      .addCase(restoreSession.rejected, (state, action) => {
+        state.loading = false;
+        state.isLoggedIn = false;
+        state.username = null;
+        state.firstName = null;
+        state.sessionToken = null;
         state.error = action.payload as string;
       });
   },

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Nav, Footer, GeneratePass } from './_components';
 import { AccountLayout } from './Account';
 import { Home } from './Home';
@@ -10,32 +10,35 @@ import './App.css';
 import { AppDispatch, RootState } from './app/store'; // Import the AppDispatch and RootState types
 import { PasswordLayout } from './Passwords/PasswordLayout';
 import Loading from './_components/Loading';
+import {showNotification } from './features/notifications/notificationSlice';
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>(); // Ensure dispatch is correctly typed
-  const { isLoggedIn, loading } = useSelector((state: RootState) => state.auth); // Use RootState type for useSelector
-
+  const { loading } = useSelector((state: RootState) => state.auth); // Use RootState type for useSelector
+  const location = useLocation();
 
   useEffect(() => {
-    const username = sessionStorage.getItem('username');
-    const firstName = sessionStorage.getItem('firstName');
-    const lastActive = sessionStorage.getItem('lastActive');
-    const sessionToken = sessionStorage.getItem('sessionToken');
+    const checkAndRestoreSession = async () => {
+      const hasVisitedBefore = localStorage.getItem('hasVisited');
 
-    const currentTime = new Date().getTime();
-
-    if (username && firstName && lastActive) {
-      if (currentTime - parseInt(lastActive) < 10 * 60 * 1000) {
-        // User is still active
-        const userData = { username, firstName, sessionToken };
-        dispatch(restoreSession(userData));
-      } else {
-        sessionStorage.clear(); // Clear session if inactive for more than 10 minutes
+      if (!hasVisitedBefore) {
+        // Set the flag to indicate that the user has visited
+        localStorage.setItem('hasVisited', 'true');
+        return;
       }
-    }
-  }, [isLoggedIn]);
 
+      console.log("Before calling session API");
+      const result = await dispatch(restoreSession());
+      
+      if (result.payload === "Session has expired.") {
+        dispatch(showNotification("Your session has expired. Please log in again."));
+      } 
 
+      console.log("After calling session API");
+    };
+
+    checkAndRestoreSession();
+  }, [location, dispatch]);
 
   return (
     <div className="app-container bg-opblack400 gap-5">

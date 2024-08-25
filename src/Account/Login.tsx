@@ -71,12 +71,6 @@ const Login: React.FC = () => {
             try {
                 const formattedData = await encryptAndFormatData(formData.master_password);
 
-
-                // Dispatch the login action with the encrypted master password
-                // await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
-
-                // dispatch(showNotification('Login successful'));
-
                 try {
                     await dispatch(login({ username: formData.username, master_password: formData.master_password, encryptedData: formattedData })).unwrap();
                     dispatch(showNotification('Login successful'));
