@@ -10,11 +10,10 @@ export { GetPasswords };
 
 
 const GetPasswords: React.FC = () => {
-
-
     const dispatch: AppDispatch = useDispatch();
     const { isLoggedIn, sessionToken } = useSelector((state: RootState) => state.auth);
     const { passwords, loading } = useSelector((state: RootState) => state.passwords);
+    const elementkey = Math.random();
     // debugger;
     useEffect(() => {
         if (isLoggedIn && sessionToken) {
@@ -43,14 +42,14 @@ const GetPasswords: React.FC = () => {
             </div>
             {loading && <Loading />}
             {!loading &&
-                <ul>
+                <ul key={elementkey}>
 
                     {passwords.map((password: any) => (
                         <li key={password.id} className='bg-opblack400 mb-4 rounded-md'>
                             <Link to={`./${password.id}`} className='p-[10px] block'>
                                 <div className="card flex gap-4">
                                     <div className="thumbnail bg-black p-1.5 rounded-full">
-                                        <svg stroke="currentColor" fill="#000" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="28px" width="28px" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 7a9 9 0 0 0 -7.5 -4a8.991 8.991 0 0 0 -7.484 4"></path><path d="M11.5 3a16.989 16.989 0 0 0 -1.826 4"></path><path d="M12.5 3a16.989 16.989 0 0 1 1.828 4"></path><path d="M19.5 17a9 9 0 0 1 -7.5 4a8.991 8.991 0 0 1 -7.484 -4"></path><path d="M11.5 21a16.989 16.989 0 0 1 -1.826 -4"></path><path d="M12.5 21a16.989 16.989 0 0 0 1.828 -4"></path><path d="M2 10l1 4l1.5 -4l1.5 4l1 -4"></path><path d="M17 10l1 4l1.5 -4l1.5 4l1 -4"></path><path d="M9.5 10l1 4l1.5 -4l1.5 4l1 -4"></path></svg>
+                                        <svg stroke="currentColor" fill="#000" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="28px" width="28px" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 7a9 9 0 0 0 -7.5 -4a8.991 8.991 0 0 0 -7.484 4"></path><path d="M11.5 3a16.989 16.989 0 0 0 -1.826 4"></path><path d="M12.5 3a16.989 16.989 0 0 1 1.828 4"></path><path d="M19.5 17a9 9 0 0 1 -7.5 4a8.991 8.991 0 0 1 -7.484 -4"></path><path d="M11.5 21a16.989 16.989 0 0 1 -1.826 -4"></path><path d="M12.5 21a16.989 16.989 0 0 0 1.828 -4"></path><path d="M2 10l1 4l1.5 -4l1.5 4l1 -4"></path><path d="M17 10l1 4l1.5 -4l1.5 4l1 -4"></path><path d="M9.5 10l1 4l1.5 -4l1.5 4l1 -4"></path></svg>
                                     </div>
                                     <div className="flex-1  content flex justify-between align-middle">
                                         <div>
@@ -61,7 +60,7 @@ const GetPasswords: React.FC = () => {
                                         <div>
 
                                             <div className='hover:bg-gray-600 p-3 rounded-full'>
-                                                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" height="15px" width="15px" xmlns="http://www.w3.org/2000/svg"><path d="M294.1 256L167 129c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.3 34 0L345 239c9.1 9.1 9.3 23.7.7 33.1L201.1 417c-4.7 4.7-10.9 7-17 7s-12.3-2.3-17-7c-9.4-9.4-9.4-24.6 0-33.9l127-127.1z"></path></svg>
+                                                <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 512 512" height="15px" width="15px" xmlns="http://www.w3.org/2000/svg"><path d="M294.1 256L167 129c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.3 34 0L345 239c9.1 9.1 9.3 23.7.7 33.1L201.1 417c-4.7 4.7-10.9 7-17 7s-12.3-2.3-17-7c-9.4-9.4-9.4-24.6 0-33.9l127-127.1z"></path></svg>
                                             </div>
                                         </div>
                                     </div>

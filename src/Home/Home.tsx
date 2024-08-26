@@ -15,7 +15,7 @@ function Home() {
   let auth = isLoggedIn;
   useEffect(() => {
     auth = isLoggedIn
-    console.log("User:", isLoggedIn)
+    // console.log("User:", isLoggedIn)
   }, [isLoggedIn])
 
   return (

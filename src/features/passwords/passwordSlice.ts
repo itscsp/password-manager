@@ -193,7 +193,8 @@ export const updatePassword = createAsyncThunk(
 const passwordSlice = createSlice({
   name: "passwords",
   initialState,
-  reducers: {},
+  reducers: {
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPasswords.pending, (state) => {
