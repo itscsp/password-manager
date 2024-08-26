@@ -55,7 +55,7 @@ const GetPassword: React.FC = () => {
     const currentPassword = passwords[currentIndex];
 
     if (!currentPassword) {
-        return <div>Password not found.</div>; // Handle case where password is deleted or not found
+        return <div>Password not found.</div>; // Handle case where password is deleted or not found.
     }
 
     const deleteHandler = async () => {
