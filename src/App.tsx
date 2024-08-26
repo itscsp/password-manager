@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { Nav, Footer, GeneratePass } from './_components';
 import { AccountLayout } from './Account';
 import { Home } from './Home';
@@ -14,46 +14,67 @@ import { showNotification } from './features/notifications/notificationSlice';
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>(); // Ensure dispatch is correctly typed
   const location = useLocation();
-  
+  const navigate = useNavigate();
+
+
+  const checkAndRestoreSession = async () => {
+    console.log("checkAndRestoreSession: Function called");
+
+    const hasVisitedBefore = localStorage.getItem('hasVisited');
+    console.log("hasVisitedBefore:", hasVisitedBefore);
+
+    if (!hasVisitedBefore) {
+      console.log("First visit. Setting 'hasVisited' flag.");
+      localStorage.setItem('hasVisited', 'true');
+      return;
+    }
+
+    console.log("Before calling restoreSession API");
+    const result = await dispatch(restoreSession());
+    console.log("Result from restoreSession:", result);
+
+    if (result.payload === "Session has expired.") {
+      console.log("Session expired. Dispatching showNotification.");
+      dispatch(showNotification("Your session has expired. Please log in again."));
+      navigate("/");
+    }
+
+    console.log("After calling restoreSession API");
+  };
 
   useEffect(() => {
-    const checkAndRestoreSession = async () => {
-      const hasVisitedBefore = localStorage.getItem('hasVisited');
-
-      if (!hasVisitedBefore) {
-        // Set the flag to indicate that the user has visited
-        localStorage.setItem('hasVisited', 'true');
-        return;
-      }
-
-      console.log("Before calling session API");
-      const result = await dispatch(restoreSession());
-
-      if (result.payload === "Session has expired.") {
-        dispatch(showNotification("Your session has expired. Please log in again."));
-      }
-
-      console.log("After calling session API");
-    };
-
+    console.log("useEffect: Initial check and restore session");
     checkAndRestoreSession();
+
+    // Set up an interval to check the session every 3 minutes (180,000 milliseconds)
+    console.log("Setting up interval to check session every 3 minutes");
+    const intervalId = setInterval(() => {
+      console.log("Interval triggered. Checking session.");
+      checkAndRestoreSession();
+    }, 180000);
+
+    // Cleanup the interval on component unmount
+    return () => {
+      console.log("Cleaning up interval on component unmount");
+      clearInterval(intervalId);
+    };
   }, [location, dispatch]);
 
   return (
     <div className="app-container bg-opblack400 gap-5">
       <Nav />
       <div className={`onepass-container`}>
-    
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="account/*" element={<AccountLayout />} />
-            <Route path="password-generator" element={<GeneratePass />} />
 
-            {/* Private Routes */}
-            <Route path="passwords/*" element={<PasswordLayout />} />
-          </Routes>
-        
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="account/*" element={<AccountLayout />} />
+          <Route path="password-generator" element={<GeneratePass />} />
+
+          {/* Private Routes */}
+          <Route path="passwords/*" element={<PasswordLayout />} />
+        </Routes>
+
       </div>
       <Footer />
     </div>
