@@ -6,8 +6,9 @@ import { deletePassword, fetchIndividualPassword } from "../features/passwords/p
 import { clearNotification, showNotification } from "../features/notifications/notificationSlice";
 import Loading from "../_components/Loading";
 import { MdArrowOutward } from "react-icons/md";
-
 import { FaEye, FaEyeSlash, FaCopy } from "react-icons/fa";
+import DeleteModal from "../_components/deleteModal";
+
 const GetPassword: React.FC = () => {
     const { id } = useParams();
     const dispatch: AppDispatch = useDispatch();
@@ -21,7 +22,7 @@ const GetPassword: React.FC = () => {
         setShowPassword(!showPassword);
     };
 
-    const handleCopy = (text:string, field:string) => {
+    const handleCopy = (text: string, field: string) => {
         navigator.clipboard.writeText(text)
             .then(() => {
                 setCopyStatus({ ...copyStatus, [field]: true });
@@ -63,11 +64,9 @@ const GetPassword: React.FC = () => {
 
         if (result.meta.requestStatus === "fulfilled") {
             dispatch(showNotification(`${currentPassword.url} was deleted successfully`));
-
             setTimeout(() => {
                 dispatch(clearNotification());
             }, 3000); // Clear notification after 3 seconds
-
             navigate('/passwords'); // Navigate away after deletion to avoid accessing deleted data
         } else {
             dispatch(showNotification("Failed to delete password."));
@@ -77,14 +76,14 @@ const GetPassword: React.FC = () => {
         }
     };
 
-    const classes = "text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker";
+    const inputClasses = "text-base outline-none border-b-2 border-opred w-full p-4 rounded-md bg-opblack400 hover:bg-opblack500 focus:bg-opblack600 active:bg-opblack700 hover:border-opred-dark focus:border-opred-dark active:border-opred-darker";
+    
     const isSameTimestamp = currentPassword.created_at === currentPassword.updated_at;
-
 
     return (
         <>
             <div>
-                <div className="flex align-middle ">
+                <div className="flex align-middle">
                     <div className="flex items-center min-w-[60px]">
                         <Link to={"/passwords"} className='hover:bg-gray-600 p-1 rounded-full inline-block'>
                             <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 512 512" height="15px" width="15px" xmlns="http://www.w3.org/2000/svg"><path d="M217.9 256L345 129c9.4-9.4 9.4-24.6 0-33.9-9.4-9.4-24.6-9.3-34 0L167 239c-9.1 9.1-9.3 23.7-.7 33.1L310.9 417c4.7 4.7 10.9 7 17 7s12.3-2.3 17-7c9.4-9.4 9.4-24.6 0-33.9L217.9 256z"></path></svg>
@@ -99,36 +98,33 @@ const GetPassword: React.FC = () => {
                             {currentPassword.url}
                         </span>
                         <div className='hover:bg-gray-600 p-1 rounded-full inline-block'>
-
                             <MdArrowOutward size={16} />
                         </div>
                     </Link>
-
                 </div>
             </div>
             <div>
-
-                <hr className="mt-5 mb-4" />
+                <hr className="mt-5 mb-4 border-gray-700" />
                 <div className="main mb-9">
                     <div className="form-control mb-4">
-                        <label htmlFor="username">Username</label>
+                        <label htmlFor="username" className="text-gray-300">Username</label>
                         <div className="relative">
                             <input
                                 disabled
                                 value={currentPassword.username}
-                                className={classes}
+                                className={inputClasses}
                             />
                             <span
                                 onClick={() => handleCopy(currentPassword.username, 'username')}
-                                className="absolute inset-y-0 right-0 flex items-center cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-[#585858]"
+                                className="absolute inset-y-0 right-0 flex items-center cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-gray-600"
                             >
                                 <FaCopy />
-                                {copyStatus.username && <span className="absolute text-opred right-12 inset-y-0 ">Copied!</span>}
+                                {copyStatus.username && <span className="absolute text-red-500 right-12 inset-y-0">Copied!</span>}
                             </span>
                         </div>
                     </div>
                     <div className="form-control mb-4">
-                        <label htmlFor="password">Password</label>
+                        <label htmlFor="password" className="text-gray-300">Password</label>
                         <div className="relative">
                             <input
                                 type={showPassword ? 'text' : 'password'}
@@ -136,20 +132,18 @@ const GetPassword: React.FC = () => {
                                 id="password"
                                 value={currentPassword.password}
                                 disabled
-                                className={classes}
-
+                                className={inputClasses}
                             />
-
                             <span
                                 onClick={() => handleCopy(currentPassword.password, 'password')}
-                                className="absolute inset-y-0 right-8 flex items-center cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-[#585858]"
+                                className="absolute inset-y-0 right-8 flex items-center cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-gray-600"
                             >
                                 <FaCopy />
-                                {copyStatus.password && <span className="absolute text-opred right-12 inset-y-0 z-10">Copied!</span>}
+                                {copyStatus.password && <span className="absolute text-red-500 right-12 inset-y-0 z-10">Copied!</span>}
                             </span>
                             <span
                                 onClick={togglePasswordVisibility}
-                                className="absolute inset-y-0 right-0 flex items-center cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-[#585858]"
+                                className="absolute inset-y-0 right-0 flex items-center cursor-pointer mx-2 my-auto h-fit p-1.5 rounded-full hover:bg-gray-600"
                             >
                                 {showPassword ? <FaEyeSlash /> : <FaEye />}
                             </span>
@@ -157,23 +151,33 @@ const GetPassword: React.FC = () => {
                     </div>
                     {currentPassword.note &&
                         <div className="form-control mb-4">
-                            <label>Notes</label>
+                            <label className="text-gray-300">Notes</label>
                             <div className="relative">
-                                <p className={classes}>{currentPassword.note}</p>
+                                <p className={inputClasses}>{currentPassword.note}</p>
                             </div>
                         </div>
                     }
-                    <small className="block">Created At: {currentPassword.created_at}</small>
-                    {!isSameTimestamp && (
-                        <small className="block">Updated At: {currentPassword.updated_at}</small>
-                    )}
-
+                    <div className="form-control mb-4">
+                        <label className="text-gray-300">Created On</label>
+                        <div className="relative">
+                            <p className={inputClasses}>{currentPassword.created_at}</p>
+                        </div>
+                    </div>
+                    {!isSameTimestamp &&
+                        <div className="form-control mb-4">
+                            <label className="text-gray-300">Updated On</label>
+                            <div className="relative">
+                                <p className={inputClasses}>{currentPassword.updated_at}</p>
+                            </div>
+                        </div>
+                    }
                 </div>
                 <div className="flex justify-between gap-4">
                     <Link to={`/passwords/edit/${id}`} className="text-white cursor-pointer text-base p-4 rounded-md mb-4 transition-colors duration-300 bg-opred hover:bg-opredHover focus:bg-opredHover active:bg-opredHover w-full text-center block">Edit</Link>
-                    <button onClick={deleteHandler} className="bg-transparent text-opred border border-opred  cursor-pointer text-base p-4 rounded-md mb-4 transition-colors duration-300 hover:border-opredHover hover:bg-opredHover hover:text-white w-full text-center block">Delete</button>
+
+                    <DeleteModal onDelete={deleteHandler} username={currentPassword.username} />
                 </div>
-            </div >
+            </div>
         </>
     );
 };
