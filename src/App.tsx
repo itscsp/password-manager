@@ -11,7 +11,9 @@ import { AppDispatch, RootState } from './app/store'; // Import the AppDispatch 
 import { PasswordLayout } from './Passwords/PasswordLayout';
 import { showNotification } from './features/notifications/notificationSlice';
 
+
 const App: React.FC = () => {
+   
   const dispatch = useDispatch<AppDispatch>(); // Ensure dispatch is correctly typed
   const location = useLocation();
   const navigate = useNavigate();

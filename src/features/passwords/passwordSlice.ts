@@ -45,13 +45,16 @@ const initialState: PasswordState = {
   error: null,
 };
 
+const api_root_url = import.meta.env.VITE_BASE_API_URL
+
+
 // Fetch all passwords
 export const fetchPasswords = createAsyncThunk(
   "passwords/fetchPasswords",
   async ({ sessionToken }: FetchPasswordsArgs, { rejectWithValue }) => {
     try {
       const response = await axios.get<Password[]>(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/get-passwords",
+        `${api_root_url}/get-passwords`,
         {
           headers: {
             "x-session-token": sessionToken,
@@ -76,7 +79,7 @@ export const fetchIndividualPassword = createAsyncThunk(
   ) => {
     try {
       const response = await axios.get<Password>(
-        `https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/get-password/${passwordId}`,
+        `${api_root_url}/get-password/${passwordId}`,
         {
           headers: {
             "x-session-token": sessionToken,
@@ -112,7 +115,7 @@ export const addPassword = createAsyncThunk(
 
     try {
       const response = await axios.post<Password>(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/add-password",
+        `${api_root_url}/add-password`,
         formData,
         {
           headers: {
@@ -142,7 +145,7 @@ export const deletePassword = createAsyncThunk(
 
       // API call
       const response = await axios.delete(
-        `https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/delete-password/${passwordId}`,
+        `${api_root_url}/delete-password/${passwordId}`,
         {
           headers: {
             "x-session-token": sessionToken,
@@ -170,7 +173,7 @@ export const updatePassword = createAsyncThunk(
 
     try {
       const response = await axios.put<Password>(
-        `https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/update-password/${passwordId}`,
+        `${api_root_url}/update-password/${passwordId}`,
         passwordData,
         {
           headers: {
@@ -188,6 +191,7 @@ export const updatePassword = createAsyncThunk(
     }
   }
 );
+
 
 
 const passwordSlice = createSlice({

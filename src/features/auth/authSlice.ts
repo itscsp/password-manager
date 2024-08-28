@@ -27,6 +27,8 @@ interface sessionValues {
   sessionToken: string;
 }
 
+const api_root_url = import.meta.env.VITE_BASE_API_URL
+
 export const logout = createAsyncThunk(
   "auth/logout",
   async ({ sessionToken }: sessionValues, { rejectWithValue }) => {
@@ -34,7 +36,7 @@ export const logout = createAsyncThunk(
 
     try {
       const response = await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/logout",
+        `${api_root_url}/logout`,
         {}, // Empty object if there's no request body
         {
           headers: {
@@ -62,7 +64,7 @@ export const login = createAsyncThunk(
   ) => {
     try {
       const response = await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/login",
+        `${api_root_url}/login`,
         {
           username,
           master_password,
@@ -84,7 +86,7 @@ export const startRegistration = createAsyncThunk(
   async (email: string, { rejectWithValue }) => {
     try {
       await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/start-registration",
+        `${api_root_url}/start-registration`,
         {
           email,
         }
@@ -105,7 +107,7 @@ export const verifyEmailToken = createAsyncThunk(
   ) => {
     try {
       await axios.get(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/verify-email",
+        `${api_root_url}/verify-email`,
         {
           params: { email, token },
         }
@@ -138,7 +140,7 @@ export const completeRegistration = createAsyncThunk(
   ) => {
     try {
       await axios.post(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/complete-registration",
+        `${api_root_url}/complete-registration`,
         {
           email,
           token,
@@ -179,7 +181,7 @@ export const restoreSession = createAsyncThunk(
       }
 
       const response = await axios.get(
-        "https://goldenrod-herring-662637.hostingersite.com/wp-json/password-manager/v1/check-session",
+        `${api_root_url}/check-session`,
         {
           headers: {
             "x-session-token": sessionToken,
