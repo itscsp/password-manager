@@ -4,7 +4,7 @@ import { login } from '../features/auth/authSlice';
 import { clearNotification, showNotification } from '../features/notifications/notificationSlice';
 import { encryptAndFormatData } from '../utils/encryption';
 import { AppDispatch, RootState } from '../app/store'; // Adjust imports based on your store setup
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Importing icons
 
 
@@ -149,6 +149,7 @@ const Login: React.FC = () => {
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
+                <Link className='text-opred' to={"/account/register"}>Create a new account</Link>
             </div>
         </div>
     );

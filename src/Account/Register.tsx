@@ -9,7 +9,7 @@ import { clearNotification, showNotification } from '../features/notifications/n
 import StepOne from './StepOne';
 import StepTwo from './StepTwo';
 import StepThree from './StepThree';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AppDispatch } from '../app/store'; // Adjust based on your store setup
 import validatePassword from '../utils/validatePassword';
 
@@ -174,6 +174,8 @@ const Register: React.FC = () => {
             />
           )}
         </form>
+        <Link className='text-opred' to={"/account/login"}>Login</Link>
+
       </div>
     </div>
   );

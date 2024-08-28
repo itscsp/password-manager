@@ -119,3 +119,12 @@ input:focus {
 dialog {
   z-index: 1001; /* Ensure dialog is above the dimmed background */
 }
+
+@media (min-width:660px){
+  .onepass-container{
+    background-color: #000 !important;
+    width: 75%;
+    margin: auto;
+    border-radius: 10px;
+  }
+}
