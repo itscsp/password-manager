@@ -8,7 +8,7 @@
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            margin: 0; 
+            margin: 0;
             padding: 40px;
         }
 
@@ -30,8 +30,18 @@
             border-radius: 5px 5px 0 0;
         }
 
+        .header h1 {
+            color: #fff;
+            font-size: 20px;
+        }
+
         .content {
             margin-bottom: 40px;
+        }
+
+        .content h4 {
+            font-size: 18px;
+
         }
 
         .footer {
@@ -50,7 +60,7 @@
         }
 
 
-        a.btn{
+        a.btn {
             display: inline-block;
             background-color: #D71340;
             color: #ffffff;
@@ -59,10 +69,15 @@
             padding: 15px 35px;
         }
 
-
+        code {
+            background: #000;
+            color: #fff;
+            padding: 10px;
+            letter-spacing: 15px;
+        }
     </style>
 </head>
- 
+
 <body>
     <div class="container">
         <div class="header">
@@ -70,14 +85,18 @@
             <h1>Email Verification</h1>
         </div>
         <div class="content">
-            <p>Hello,</p>
-            <code>[verification_url]</code>
-            <p>Thank you for registering. Please click the link below to verify your email address:</p>
-            <p><a class="btn" href="[verification_url]">Verify Email</a></p>
+            <p>Hello, [mailid]</p>
+            <br>
+            <p>Thank you for registering.   </p>
+            <hr/>
+            <h4>Your verification token is: <code>[token]</code></h4>
+
+            <small>Note: This token is valid for 1 hour. If it expires, please try registering again to receive a new token.</small>
+
         </div>
         <div class="footer">
             <p>&copy; 2024 OnePass. All rights reserved.</p>
-            <p>Designed and build by <a class="link" href="chethanspoojary.com">chethan s poojary</a></p>
+            <p>Designed and Developed by <a class="link" target="_blank" href="https://chethanspoojary.com/">Chethan S Poojary</a></p>
         </div>
     </div>
 </body>

@@ -56,17 +56,12 @@ class User_API
             return new WP_REST_Response(array('message' => 'Email already exists.'), 409);
         }
 
-        $verification_token = wp_generate_password(32, false);
+        // Generate a 6-digit numeric verification token
+        $verification_token = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
         set_transient('pm_verification_token_' . $email, $verification_token, 3600); // 1 hour expiration
-
-        // $verification_url = add_query_arg(array(
-        //     'token' => $verification_token,
-        //     'email' => $email,
-        // ), site_url('/wp-json/password-manager/v1/verify-email'));
 
         $token = $verification_token;
         $mailID = $email;
-
 
         // Load the email template
         $template_path = PM_PLUGIN_DIR . '/email-templates/welcome-email.html';
@@ -77,24 +72,23 @@ class User_API
         }
 
         // Create the image tag
-        $logo_url = plugins_url('email-templates/logo.png', __FILE__); // Correctly get the URL of the logo
+        $logo_url = get_site_url() . '/wp-content/plugins/password-manager/email-templates/logo.png';
         $logo_img_tag = '<img src="' . esc_url($logo_url) . '" alt="Company Logo">';
 
         // Replace placeholders with actual values
         $template = str_replace('[token]', $token, $template);
         $template = str_replace('[mailid]', $mailID, $template);
-
         $template = str_replace('[logo_img_tag]', $logo_img_tag, $template);
 
         $headers = array('Content-Type: text/html; charset=UTF-8');
-        //   Set the "From" name and email
+
+        // Set the "From" name and email
         add_filter('wp_mail_from', function ($original_email_address) {
             return 'onepass@chethanspoojary.com';
         });
         add_filter('wp_mail_from_name', function ($original_email_from) {
             return '*|OnePass';
         });
-
 
         wp_mail(
             $email,
