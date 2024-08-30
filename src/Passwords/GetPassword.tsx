@@ -82,7 +82,7 @@ const GetPassword: React.FC = () => {
 
     return (
         <>
-            <div>
+            <div className="password-content">
                 <div className="flex align-middle">
                     <div className="flex items-center min-w-[60px]">
                         <Link to={"/passwords"} className='hover:bg-gray-600 p-1 rounded-full inline-block'>

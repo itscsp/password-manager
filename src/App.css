@@ -120,6 +120,13 @@ dialog {
   z-index: 1001; /* Ensure dialog is above the dimmed background */
 }
 
+.password-content p,
+.password-content small,
+.password-content a{
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
 @media (min-width:660px){
   .onepass-container{
     background-color: #000 !important;
